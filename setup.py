@@ -20,7 +20,7 @@ elif sys.version_info >= (3,5):
 
 setup(
     name='PyTangtv',
-    version='0.2.9',
+    version='0.2.11',
     packages=['pytangtv','pytangtv.pymorph','pytangtv.pyalign','pytangtv.pymask','pytangtv.picker'],
     maintainer='Bill Meyer',
     maintainer_email='meyer8@llnl.gov',
@@ -28,7 +28,7 @@ setup(
     package_data={ "pytangtv":["bitmaps/*.xbm","bitmaps/*.png"],},
     scripts=['pytangtv/pyalign/pyalign','pytangtv/pymorph/pymorph','pytangtv/picker/picker','pytangtv/pymask/pymask'],
     license='LLNL',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
     classifiers = ['Programming Language :: Python',
                    'Programming Language :: Python :: 3'],
     install_requires = install_requires,

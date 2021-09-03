@@ -131,7 +131,9 @@ class UI(Frame):
         self.dimage = im
         self.buimage = im
         self.mimage = im
-        self.dirty = True
+        self.realdirty = True
+        self.fdirty = True
+        self.bdirty = True
         self.viddata = None
         self.vidind = 0
         self.vidnum = 0
@@ -219,6 +221,7 @@ class UI(Frame):
         self.cmaxentry.insert(0, "%d" % (self.viddata.max()))
         self.vidind = 0
         self.vidnum = self.viddata.shape[0]
+        self.dlabel.set('Frame(%d)' % (ui.vidnum,))
         self.transpose = False
         self.vflip = False
         self.hflip = False
@@ -244,8 +247,13 @@ class UI(Frame):
                 self.cminentry.insert(0, "%d" % (self.viddata.min()))
                 self.cmaxentry.delete(0, END)
                 self.cmaxentry.insert(0, "%d" % (self.viddata.max()))
-                self.viddata = self.viddata.reshape(self.viddata.shape[::-1])
-                #self.viddata = self.viddata.reshape([848, 513, 640])
+                if 'dims' in mdsargs:
+                   dims = mdsargs['dims']
+                   self.vidnum = int(self.viddata.size / (dims[0]*dims[1]))
+                   self.viddata = self.viddata.reshape([self.vidnum,dims[0],dims[1]])
+                else:
+                   self.viddata = self.viddata.reshape(self.viddata.shape[::-1])
+                   self.vidnum = self.viddata.shape[0]
                 if 'transpose' in mdsargs and mdsargs['transpose'] == 1:
                     self.transpose = True
                 if 'vflip' in mdsargs and mdsargs['vflip'] == 1:
@@ -253,10 +261,11 @@ class UI(Frame):
                 if 'hflip' in mdsargs and mdsargs['hflip'] == 1:
                     self.hflip = True
                 self.vidind = 0
-                self.vidnum = self.viddata.shape[0]
+                print(self.viddata.shape)
             else:
                 print("No shot specified")
             mdsserver.disconnect()
+            self.dlabel.set('Frame(%d)' % (ui.vidnum,))
         else:
             print("No MDSPlus server")
 
@@ -276,7 +285,7 @@ class UI(Frame):
                 if 'hflip' in mdsargs and mdsargs['vflip'] == 1:
                     self.xi = w - 1 - self.xi
                     self.xo = w - 1 - self.xo
-                self.dirty = True
+                self.realdirty = True
                 self.wmarks = np.transpose((self.xi, self.yi)).tolist()
                 self.bmarks = np.transpose((self.xo, self.yo)).tolist()
                 if 'xshift' in mdsargs:
@@ -331,7 +340,7 @@ class UI(Frame):
         self.bgupdate()
 
     def bgupdate(self):
-        self.dirty = True
+        self.bdirty = True
         i = np.asarray(self.bgimage)
         if self.vidind < 0:
             self.vidind = 0
@@ -374,13 +383,13 @@ class UI(Frame):
     def selmode(self):
         global mode
         self.mode = int(mode.get())
-        self.dirty = True
+        self.realdirty = True
         self.refresh()
 
     def seldirection(self):
         global direction
         self.warpdirection = int(direction.get())
-        self.dirty = True
+        self.realdirty = True
         self.refresh()
 
     def seldeg(self):
@@ -390,23 +399,21 @@ class UI(Frame):
             self.morphbut.config(relief="sunken", image=add)
         elif morph:
             self.morphbut.config(relief="sunken", image=on)
-        self.dirty = True
+        self.realdirty = True
         self.refresh()
 
     def relpick(self, event):
         cx = self.mapx(event)
         cy = self.mapy(event)
+        self.realdirty = True
         self.degree = int(degree.get())
         if self.mode == 1:  # add
             self.bmarks.append([cx, cy])
-            self.dirty = True
         elif self.mode == 2:  # edit
             self.bmarks[self.editind][0] = cx
             self.bmarks[self.editind][1] = cy
-            self.dirty = True
         elif self.mode == 3:  # delete
             # nothing to do for delete
-            self.dirty = True
             pass
         if len(self.wmarks) > 0:
             self.xi = np.array(self.wmarks)[:, 0]
@@ -476,7 +483,7 @@ class UI(Frame):
         self.refresh()
 
     def remmark(self, event):
-        self.dirty = True
+        self.realdirty = True
         self.mimage = self.image
         self.wmarks = []
         self.bmarks = []
@@ -502,7 +509,7 @@ class UI(Frame):
         self.rposentry.insert(0, "%d" % self.rot)
         self.image = self.buimage
         self.bgimage = self.bubgimage
-        self.dirty = True
+        self.realdirty = True
         self.refresh()
 
     def rightstep(self):
@@ -607,7 +614,7 @@ class UI(Frame):
             self.warptype = warp['type']
         else:
             self.warpversion = 0
-        self.dirty = True
+        self.realdirty = True
         self.refresh()
 
     def morphit(self):
@@ -621,7 +628,7 @@ class UI(Frame):
             else:
                 self.morphbut.config(relief="sunken", image=on)
             morph = True
-        self.dirty = True
+        self.realdirty = True
         self.refresh()
 
     def refreshcb(self, val):
@@ -640,12 +647,15 @@ class UI(Frame):
         if morph and self.warpdirection == 1:
             if len(self.bmarks) >= (self.degree+1)**2:
                 self.morphbut.config(relief="sunken", image=on)
-                if self.dirty:
+                if self.realdirty:
                     self.kx, self.ky = mi.polywarp(
                         self.xi, self.yi, self.xo, self.yo, degree=self.degree)
+                    self.realdirty = False
+                    self.fdirty = True
+                if self.fdirty:
                     self.mimage = pImage.fromarray(mi.poly_2d(
                         np.asarray(self.image), self.kx, self.ky))
-                    self.dirty = False
+                    self.fdirty = False
                 im1 = self.mimage
             else:
                 self.morphbut.config(relief="sunken", image=add)
@@ -676,12 +686,15 @@ class UI(Frame):
             if morph and self.warpdirection == 2:
                 if len(self.bmarks) >= (self.degree+1)**2:
                     self.morphbut.config(relief="sunken", image=on)
-                    if self.dirty:
+                    if self.realdirty:
                         self.kx, self.ky = mi.polywarp(
                             self.xi, self.yi, self.xo, self.yo, degree=self.degree)
+                        self.realdirty = False
+                        self.bdirty = True
+                    if self.bdirty:
                         self.mimage = pImage.fromarray(mi.poly_2d(
                             np.asarray(im2), self.kx, self.ky))
-                        self.dirty = False
+                        self.bdirty = False
                     im2 = self.mimage
                 else:
                     self.morphbut.config(relief="sunken", image=add)
@@ -727,6 +740,7 @@ class UI(Frame):
 
         self.bitmap = ImageTk.PhotoImage(dimage)
         self.simage = dimage
+        self.canvas.delete("all")
         self.canvas.create_image(0, 0, anchor=NW, image=self.bitmap)
         if self.mode != 99:
             for m in self.wmarks:
@@ -839,7 +853,9 @@ if __name__ == "__main__":
 
     frame2 = Frame(frame)
     frame2.pack(side=TOP)
-    Label(frame2, text='Frame(%d)' % (ui.vidnum,)).pack(side=LEFT)
+    ui.dlabel = StringVar()
+    ui.dlabel.set('Frame(%d)' % (ui.vidnum,))
+    Label(frame2, textvariable=ui.dlabel).pack(side=LEFT)
     ui.frentry = Entry(frame2, width=10)
     ui.frentry.bind('<Key-Return>', ui.frame_update)
     ui.frentry.insert(0, "0")

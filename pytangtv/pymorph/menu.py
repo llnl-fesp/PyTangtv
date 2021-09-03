@@ -203,17 +203,20 @@ class mymenu:
                 'L').resize((self.ui.W, self.ui.H), pImage.ANTIALIAS)
             self.ui.buimage = self.ui.image
             self.ui.refresh()
+            self.ui.fdirty = True
 
     def showwarp(self, event=None):
         self.ui.showwarp()
 
     def resetimage(self):
         self.ui.image = self.ui.buimage
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def resetbg(self):
         self.ui.bgimage = self.ui.bubgimage
         self.ui.transpose = False
+        self.ui.bdirty = True
         self.ui.vflip = False
         self.ui.hflip = False
         self.ui.refresh()
@@ -246,70 +249,85 @@ class mymenu:
             self.ui.bgimage = pImage.open(ifilename).convert('L')
             self.ui.bubgimage = self.ui.bgimage
             self.ui.refresh()
+            self.ui.bdirty = True
             self.ui.vidnum = 0
 
     def flipimv(self):
         self.ui.image = self.ui.image.transpose(pImage.FLIP_TOP_BOTTOM)
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def flipimh(self):
         self.ui.image = self.ui.image.transpose(pImage.FLIP_LEFT_RIGHT)
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def transposeim(self):
         self.ui.image = self.ui.image.transpose(pImage.TRANSPOSE)
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def flipbgv(self):
         if self.ui.bgimage != None:
             self.ui.bgimage = self.ui.bgimage.transpose(pImage.FLIP_TOP_BOTTOM)
             self.ui.vflip = True
+            self.ui.bdirty = True
             self.ui.refresh()
 
     def flipbgh(self):
         if self.ui.bgimage != None:
             self.ui.hflip = True
             self.ui.bgimage = self.ui.bgimage.transpose(pImage.FLIP_LEFT_RIGHT)
+            self.ui.bdirty = True
             self.ui.refresh()
 
     def transposebg(self):
         if self.ui.bgimage != None:
             self.ui.transpose = True
             self.ui.bgimage = self.ui.bgimage.transpose(pImage.TRANSPOSE)
+            self.ui.bdirty = True
             self.ui.refresh()
 
     def sharp(self):
         d = ImageEnhance.Sharpness(self.ui.image)
         self.ui.image = d.enhance(2.0)
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def blur(self):
         d = ImageEnhance.Sharpness(self.ui.image)
         self.ui.image = d.enhance(0.0)
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def med3(self):
         self.ui.image = self.ui.image.filter(ImageFilter.MedianFilter(3))
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def med5(self):
         self.ui.image = self.ui.image.filter(ImageFilter.MedianFilter(5))
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def med7(self):
         self.ui.image = self.ui.image.filter(ImageFilter.MedianFilter(7))
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def autoc(self):
         self.ui.image = ImageOps.autocontrast(self.ui.image)
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def equalize(self):
         self.ui.image = ImageOps.equalize(self.ui.image)
+        self.ui.fdirty = True
         self.ui.refresh()
 
     def edge(self):
         self.ui.image = self.ui.image.filter(ImageFilter.FIND_EDGES)
+        self.ui.fdirty = True
         self.ui.refresh()
 #   def wiener(self):
 #        self.ui.image =  scipy.signal.wiener(self.ui.image,[5,5],noise=None)
@@ -318,39 +336,48 @@ class mymenu:
     def bgsharp(self):
         d = ImageEnhance.Sharpness(self.ui.bgimage)
         self.ui.bgimage = d.enhance(2.0)
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgblur(self):
         d = ImageEnhance.Sharpness(self.ui.bgimage)
         self.ui.bgimage = d.enhance(0.0)
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgautoc(self):
         self.ui.bgimage = ImageOps.autocontrast(self.ui.bgimage)
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgequalize(self):
         self.ui.bgimage = ImageOps.equalize(self.ui.bgimage)
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgedge(self):
         self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.FIND_EDGES)
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bl(self):
         self.ui.bl = self.v.get()
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgmed3(self):
         self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.MedianFilter(3))
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgmed5(self):
         self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.MedianFilter(5))
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgmed7(self):
         self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.MedianFilter(7))
+        self.ui.bdirty = True
         self.ui.refresh()
 
     def quit(self, event=None):
