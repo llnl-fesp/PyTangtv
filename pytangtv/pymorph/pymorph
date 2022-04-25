@@ -771,7 +771,7 @@ if __name__ == "__main__":
 
     root = Tk()
     if len(args) == 0:
-        ifilename = askopenfilename(filetypes=[("tiff", "*.tiff"),
+        ifilename = askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                                ("png", "*.png"),
                                                ("allfiles", "*")])
     else:

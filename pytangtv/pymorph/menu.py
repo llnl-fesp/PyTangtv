@@ -194,7 +194,7 @@ class mymenu:
         self.ui.load_data_from_mdsplus(self.ui.mdsdataargs)
 
     def loadimage(self, event=None):
-        ifilename = str(askopenfilename(filetypes=[("tiff", "*.tiff"),
+        ifilename = str(askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                               ("png", "*.png"),
                                               ("jpg", "*.jpg"),
                                               ("allfiles", "*")]))
@@ -222,26 +222,26 @@ class mymenu:
         self.ui.refresh()
 
     def saveimage(self, event=None):
-        ifilename = str(asksaveasfilename(filetypes=[("tiff", "*.tiff"),
+        ifilename = str(asksaveasfilename(filetypes=[("tiff", ".tif .tiff"),
                                               ("png", "*.png"),
                                               ("jpg", "*.jpg")]))
         if ifilename != None:
             self.ui.im1.save(ifilename)
     def savefinal(self, event=None):
-        ifilename = str(asksaveasfilename(filetypes=[("tiff", "*.tiff"),
+        ifilename = str(asksaveasfilename(filetypes=[("tiff", ".tif .tiff"),
                                               ("png", "*.png"),
                                               ("jpg", "*.jpg")]))
         if ifilename != None:
             self.ui.simage.save(ifilename)
     def savebg(self, event=None):
-        ifilename = str(asksaveasfilename(filetypes=[("tiff", "*.tiff"),
+        ifilename = str(asksaveasfilename(filetypes=[("tiff", ".tif .tiff"),
                                               ("png", "*.png"),
                                               ("jpg", "*.jpg")]))
         if ifilename != None:
             self.ui.im2.save(ifilename)
 
     def loadbg(self, event=None):
-        ifilename = str(askopenfilename(filetypes=[("tiff", "*.tiff"),
+        ifilename = str(askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                               ("png", "*.png"),
                                               ("jpg", "*.jpg"),
                                               ("allfiles", "*")]))

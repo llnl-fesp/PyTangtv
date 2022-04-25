@@ -8,6 +8,7 @@ import sys
 import json
 from math import *
 import getopt
+import numpy as np
 try:
    from tkinter import *
 except:
@@ -219,6 +220,16 @@ class UI(Label):
         if event.char == "s":
             sys.stderr.write("skipped\n")
             self.advance()
+        elif event.char == "R":
+            sys.stdout.write("\n")
+            sys.stdout.write("Selection size :")
+            print(self.selshape)
+            sys.stdout.write("Centroid pixel location %g, %g\n" % (self.cx/scalew,self.cy/scaleh))
+            sys.stdout.write("Values min,max,clip %g, %g, %g\n" % (self.imin,self.imax,self.clip))
+            sys.stdout.write("Average, average above clip %g, %g\n" % (self.ravg,self.avg))
+            sys.stdout.write("Mean: %g\n" % (self.mn,))
+            sys.stdout.write("Standard dev : %g\n" % (self.sd,))
+            sys.stdout.write("\n")
         elif event.char == "r":
             self.ax.append((spots[self.spotnum][0]*cos(theta)))
             self.ay.append((spots[self.spotnum][0]*sin(theta)))
@@ -240,8 +251,8 @@ class UI(Label):
             if jsonout:
                 jdict = {"x":self.ax,"y":self.ay,"z":self.az,"ix":self.aix,"iy":self.aiy}
                 jsonString = json.dumps(jdict)
-                jsonFile = open(jsonname,"w")
-                jsonFile.write(jsonString)
+                jsonFile = open(jsonname,"a")
+                jsonFile.write(jsonString+"\n")
                 jsonFile.close()
             sys.exit()
 
@@ -290,28 +301,52 @@ class UI(Label):
             imax = e[1]
 
         clip = (imax - imin)/2 + imin
+        self.imin = imin
+        self.imax = imax
+        self.clip = clip
         sxi = 0.0
         syi = 0.0
         tpix = 0.0
+        rpix = 0.0
+        num = 0.0
+        rnum = 0.0
+        stats = np.zeros((self.x2-self.x1,self.y2-self.y1))
+        self.selshape = stats.shape
         for i in range(self.x1, self.x2):
             for j in range(self.y1, self.y2):
                 if self.rev:
                     pix = 255 - sdata[i-self.x1, j-self.y1]
                 else:
                     pix = sdata[i-self.x1, j-self.y1]
+                stats[i-self.x1,j-self.y1] = pix
+                rnum = rnum + 1
+                rpix = rpix + pix
                 if pix > clip:
+                    num = num + 1
                     tpix = tpix + pix
                     sxi = sxi + pix * i
                     syi = syi + pix * j
 
-        if tpix > 0.0:
-            self.cx = sxi/tpix
+         
+        if num > 0.0:
+            self.avg = tpix / num
         else:
-            self.cx = self.x1
+            self.avg = 0.0
+        if rnum > 0.0:
+            self.ravg = rpix / rnum
+            self.mn = np.mean(stats)
+            self.sd = np.std(stats)
+        else:
+            self.ravg = 0.0
+            self.mn = 0.0
+            self.sd = 0.0
+
         if tpix > 0.0:
             self.cy = syi/tpix
+            self.cx = sxi/tpix
         else:
             self.cy = self.y1
+            self.cx = self.x1
         #sys.stderr.write("%g <= %g <= %g\n" % (self.x1,self.cx,self.x2))
         #sys.stderr.write("%g <= %g <= %g\n" % (self.y1,self.cy,self.y2))
 
