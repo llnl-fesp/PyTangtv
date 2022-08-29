@@ -247,13 +247,14 @@ class UI(Frame):
                 self.cminentry.insert(0, "%d" % (self.viddata.min()))
                 self.cmaxentry.delete(0, END)
                 self.cmaxentry.insert(0, "%d" % (self.viddata.max()))
-                if 'dims' in mdsargs:
-                   dims = mdsargs['dims']
-                   self.vidnum = int(self.viddata.size / (dims[0]*dims[1]))
-                   self.viddata = self.viddata.reshape([self.vidnum,dims[0],dims[1]])
-                else:
+                try:
                    self.viddata = self.viddata.reshape(self.viddata.shape[::-1])
                    self.vidnum = self.viddata.shape[0]
+                except:
+                   if 'dims' in mdsargs:
+                      dims = mdsargs['dims']
+                      self.vidnum = int(self.viddata.size / (dims[0]*dims[1]))
+                      self.viddata = self.viddata.reshape([self.vidnum,dims[0],dims[1]])
                 if 'transpose' in mdsargs and mdsargs['transpose'] == 1:
                     self.transpose = True
                 if 'vflip' in mdsargs and mdsargs['vflip'] == 1:
