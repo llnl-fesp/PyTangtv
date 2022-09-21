@@ -1,13 +1,17 @@
-#! /usr/bin/env python
+#!/Users/meyer8/opt/anaconda3/bin/python
 #
 
 import sys  # nopep8
 import os   # nopep8
+import time # nopep8
 try:
     from pathlib import Path
 except:
     from pathlib2 import Path
 import json
+from ruamel import yaml
+from ruamel.yaml.loader import SafeLoader
+from ruamel.yaml.main import round_trip_dump as yaml_dump
 import numpy as np
 from scipy import spatial
 from pytangtv.pymorph import morphimage as mi
@@ -31,6 +35,13 @@ except:
    from tkinter.filedialog import askopenfilename
 #
 
+from pkg_resources import get_distribution, DistributionNotFound
+try:
+    _dist = get_distribution('PyTangtv')
+except DistributionNotFound:
+    _version = 'Not installed with setup.py/pip'
+else:
+    _version = _dist.version
 
 
 try:
@@ -54,9 +65,19 @@ s = 1.0
 winx = 640
 winy = 860
 morph = False
+jopts = []
+
 try:
-    f = open(str(Path.home())+'/pymorph.json')
-    jopts = json.load(f)
+    yconffile = str(Path.home())+'/pymorph.yaml'
+    jconffile = str(Path.home())+'/pymorph.json'
+    if os.path.exists(yconffile):
+       with open(yconffile,'r') as f:
+          jopts = yaml.load(f,Loader=SafeLoader)
+    elif os.path.exists(jconffile):
+       with open(jconffile,'r') as f:
+          jopts = json.load(f)
+    else:
+       raise
     defaults = jopts['*']['window']
     if 'windowx' in defaults:
         winx = defaults['windowx']
@@ -69,13 +90,13 @@ try:
     if 'width' in defaults:
         w = defaults['width']
 except:
-    print("Problem reading json file")
+    print("Problem reading pymorph conf file")
     pass
 
 diag = {}
 
-options = ['width=', 'height=', 'scale=', 'spawn', 'winx=', 'winy=', 'diag=']
-optlist, args = getopt.getopt(sys.argv[1:], 'ult:w:h:s:', options)
+options = ['width=', 'height=', 'scale=', 'spawn', 'winx=', 'winy=', 'diag=', 'version']
+optlist, args = getopt.getopt(sys.argv[1:], 'vult:w:h:s:', options)
 optdict = {}
 sys.stderr.write("\n")
 for o in optlist:
@@ -86,6 +107,12 @@ if '--width' in optdict:
     w = int(optdict['--width'])
 if '-s' in optdict:
     s = float(optdict['-s'])
+if '-v' in optdict:
+    print("Version : ",_version)
+    sys.exit(0)
+if '--version' in optdict:
+    print("Version : ",_version)
+    sys.exit(0)
 if '--scale' in optdict:
     s = float(optdict['--scale'])
 if '-h' in optdict:
@@ -248,13 +275,15 @@ class UI(Frame):
                 self.cmaxentry.delete(0, END)
                 self.cmaxentry.insert(0, "%d" % (self.viddata.max()))
                 try:
-                   self.viddata = self.viddata.reshape(self.viddata.shape[::-1])
-                   self.vidnum = self.viddata.shape[0]
-                except:
                    if 'dims' in mdsargs:
                       dims = mdsargs['dims']
                       self.vidnum = int(self.viddata.size / (dims[0]*dims[1]))
                       self.viddata = self.viddata.reshape([self.vidnum,dims[0],dims[1]])
+                   else: 
+                      self.viddata = self.viddata.reshape(self.viddata.shape[::-1])
+                      self.vidnum = self.viddata.shape[0]
+                except:
+                   print("Could not reshape array: ",self.viddata.shape)
                 if 'transpose' in mdsargs and mdsargs['transpose'] == 1:
                     self.transpose = True
                 if 'vflip' in mdsargs and mdsargs['vflip'] == 1:
@@ -342,7 +371,7 @@ class UI(Frame):
 
     def bgupdate(self):
         self.bdirty = True
-        i = np.asarray(self.bgimage)
+        i = np.asarray(self.bubgimage,dtype=np.float32)
         if self.vidind < 0:
             self.vidind = 0
         elif self.vidind >= self.vidnum:
@@ -568,7 +597,29 @@ class UI(Frame):
                       "Xo=["+s.format(*self.xo)+"]\n" +
                       "Yo=["+s.format(*self.yo)+"]")
 
-    def savewarp(self, jfilename='warp.json'):
+    def savewarpyaml(self, yfilename='warp.yaml'):
+        warp = {}
+        warp['xi'] = self.xi.tolist()
+        warp['yi'] = self.yi.tolist()
+        warp['xo'] = self.xo.tolist()
+        warp['yo'] = self.yo.tolist()
+        warp['xshift'] = self.hpos
+        warp['yshift'] = self.vpos
+        warp['rotation'] = self.rot
+        warp['degree'] = self.degree
+        warp['type'] = self.warptype
+        warp['direction'] = self.warpdirection
+        #with open(yfilename, 'w') as outfile:
+        #    yaml.dump(warp, outfile, indent=8)
+        with open(yfilename, 'w') as outfile:
+             outfile.write("# \n")
+             outfile.write("# Written by "+os.getlogin()+"\n")
+             outfile.write("# on  "+time.ctime()+"\n")
+             outfile.write("# \n")
+             outfile.write(yaml_dump(warp,indent=4,block_seq_indent=4))
+     
+
+    def savewarpjson(self, jfilename='warp.json'):
         warp = {}
         warp['xi'] = self.xi.tolist()
         warp['yi'] = self.yi.tolist()
@@ -581,7 +632,43 @@ class UI(Frame):
         warp['type'] = self.warptype
         warp['direction'] = self.warpdirection
         with open(jfilename, 'w') as outfile:
-            json.dump(warp, outfile, indent=4)
+            json.dump(warp, outfile, indent=8)
+
+    def loadwarpyaml(self, yfilename='warp.yaml'):
+        with open(yfilename, 'r') as infile:
+            warp = yaml.load(infile,Loader=SafeLoader)
+        self.xi = np.array(warp['xi'])
+        self.yi = np.array(warp['yi'])
+        self.xo = np.array(warp['xo'])
+        self.yo = np.array(warp['yo'])
+        self.hpos = warp['xshift']
+        self.vpos = warp['yshift']
+        self.rot = warp['rotation']
+        self.degree = warp['degree']
+        self.xposentry.delete(0, END)
+        self.xposentry.insert(0, "%d" % self.hpos)
+        self.yposentry.delete(0, END)
+        self.yposentry.insert(0, "%d" % -self.vpos)
+        self.rposentry.delete(0, END)
+        self.rposentry.insert(0, "%d" % -self.rot)
+        self.wmarks = np.transpose((self.xi, self.yi)).tolist()
+        self.bmarks = np.transpose((self.xo, self.yo)).tolist()
+        if 'direction' in warp:
+            if warp['direction'] == 'forward':
+                self.warpdirection = 1
+            elif warp['direction'] == 'reverse':
+                self.warpdirection = 2
+            else:
+                self.warpdirection = 0
+        else:
+            self.warpdirection = 0
+        if 'type' in warp:
+            self.warptype = warp['type']
+        else:
+            self.warpversion = 0
+        self.realdirty = True
+        self.refresh()
+
 
     def loadwarpjson(self, jfilename='warp.json'):
         with open(jfilename, 'r') as infile:
@@ -759,13 +846,6 @@ if __name__ == "__main__":
 
     import sys
 
-    from pkg_resources import get_distribution, DistributionNotFound
-    try:
-        _dist = get_distribution('PyTangtv')
-    except DistributionNotFound:
-        _version = 'Not installed with setup.py/pip'
-    else:
-        _version = _dist.version
     check4updates('https://pypi.org/pypi/pytangtv/json',thisver=_version)
 
     
@@ -875,6 +955,10 @@ if __name__ == "__main__":
     ui.cmaxentry = Entry(frame2, width=10)
     ui.cmaxentry.bind('<Key-Return>', ui.range_update)
     ui.cmaxentry.pack(side=LEFT, padx=2, pady=2)
+    ui.cminentry.delete(0, END)
+    ui.cminentry.insert(0, "0")
+    ui.cmaxentry.delete(0, END)
+    ui.cmaxentry.insert(0, "255")
 
     if 'mdsplus' in diag:
         mdsargs = diag['mdsplus']

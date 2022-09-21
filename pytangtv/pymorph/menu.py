@@ -51,8 +51,10 @@ class mymenu:
         root.bind_all("<Control-i>", self.loadshotdat)
         root.bind_all("<Control-w>", self.showwarp)
         root.bind_all("<Control-l>", self.loadwarpjson)
+        root.bind_all("<Control-y>", self.loadwarpyaml)
         root.bind_all("<Control-m>", self.loadwarpmds)
-        root.bind_all("<Control-s>", self.savewarp)
+        root.bind_all("<Control-t>", self.savewarpjson)
+        root.bind_all("<Control-s>", self.savewarpyaml)
         self.root = root
         return
 
@@ -70,12 +72,16 @@ class mymenu:
                                  accelerator="Ctrl+i")
         mb_file.menu.add_command(label='show warp', command=self.showwarp,
                                  accelerator="Ctrl+w")
+        mb_file.menu.add_command(label='load warp yaml', command=self.loadwarpyaml,
+                                 accelerator="Ctrl+y")
         mb_file.menu.add_command(label='load warp json', command=self.loadwarpjson,
                                  accelerator="Ctrl+l")
         mb_file.menu.add_command(label='load warp mds', command=self.loadwarpmds,
                                  accelerator="Ctrl+m")
-        mb_file.menu.add_command(label='save warp', command=self.savewarp,
+        mb_file.menu.add_command(label='save warp yaml', command=self.savewarpyaml,
                                  accelerator="Ctrl+s")
+        mb_file.menu.add_command(label='save warp json', command=self.savewarpjson,
+                                 accelerator="Ctrl+t")
         mb_file.menu.add_command(label='save final image', command=self.savefinal,
                                  accelerator="Ctrl+s")
         mb_file.menu.add_separator()
@@ -174,11 +180,20 @@ class mymenu:
             self.ui.load_data_from_savefile(sfilename=sfilename)
 
 
+    def savewarpyaml(self, event=None):
+        yfilename = str(asksaveasfilename(filetypes=[("yaml", "*.yaml")]))
+        if yfilename != None:
+            self.ui.savewarpyaml(yfilename=yfilename)
 
-    def savewarp(self, event=None):
+    def savewarpjson(self, event=None):
         jfilename = str(asksaveasfilename(filetypes=[("json", "*.json")]))
         if jfilename != None:
-            self.ui.savewarp(jfilename=jfilename)
+            self.ui.savewarpjson(jfilename=jfilename)
+
+    def loadwarpyaml(self, event=None):
+        yfilename = str(askopenfilename(filetypes=[("yaml", "*.yaml")]))
+        if yfilename != None:
+            self.ui.loadwarpyaml(yfilename=yfilename)
 
     def loadwarpjson(self, event=None):
         jfilename = str(askopenfilename(filetypes=[("json", "*.json")]))

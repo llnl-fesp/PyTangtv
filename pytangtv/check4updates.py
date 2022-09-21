@@ -2,6 +2,8 @@
 
 import sys
 import requests
+from packaging.version import parse as parseVersion
+
 
 
 def check4updates(url,thisver=None):
@@ -20,7 +22,7 @@ def check4updates(url,thisver=None):
        
     data = r.json()
     l = list(data['releases'].keys())
-    l.sort()
+    l.sort(key=parseVersion)
     latest = l[-1]
     if thisver != None and latest == thisver:
         sys.stderr.write("Running version "+str(thisver)+" is the latest.\n\n")
