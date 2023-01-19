@@ -763,7 +763,7 @@ class UI(Frame):
         wsize = int((float(self.image.size[0])*float(self.xstr.get())))
         hsize = int((float(self.image.size[1])*float(self.ystr.get())))
         # hsize = int((float(self.image.size[1])*float(self.xstr.get())))
-        im1 = im1.resize((wsize, hsize), pImage.ANTIALIAS)
+        im1 = im1.resize((wsize, hsize), pImage.Resampling.LANCZOS)
         dimage = im1
         self.im1 = im1
         s = self.scale.get()
@@ -866,12 +866,12 @@ if __name__ == "__main__":
         w, h = im.size
         w = int(w * s)
         h = int(h * s)
-        im = Image.open(ifilename).convert('L').resize((w, h), pImage.ANTIALIAS)
+        im = Image.open(ifilename).convert('L').resize((w, h), pImage.Resampling.LANCZOS)
     elif w != 0:
         im = pImage.open(ifilename).convert('L')
         iw, ih = im.size
         s = float(w) / float(iw)
-        im = pImage.open(ifilename).convert('L').resize((w, h), pImage.ANTIALIAS)
+        im = pImage.open(ifilename).convert('L').resize((w, h), pImage.Resampling.LANCZOS)
     else:
         im = pImage.open(ifilename).convert('L')
         w, h = im.size
@@ -883,7 +883,7 @@ if __name__ == "__main__":
     mymenu.addui(ui)
 
     if len(args) > 1:
-        #ui.bgimage = pImage.open(args[1]).convert('L').resize((w, h), pImage.ANTIALIAS)
+        #ui.bgimage = pImage.open(args[1]).convert('L').resize((w, h), pImage.Resampling.LANCZOS)
         ui.bgimage = pImage.open(args[1]).convert('L')
     ui.bubgimage = ui.bgimage
     ui.imscale = s
