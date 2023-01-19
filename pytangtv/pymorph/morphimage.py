@@ -46,9 +46,14 @@ def polywarp(xi, yi, xo, yo, degree=1):
 
 def poly_2d(a, kx, ky):
     ylen, xlen = a.shape
+    bylen = ylen + 2
+    bxlen = xlen + 2
+    b = np.zeros((bylen,bxlen),dtype=np.int32)
+    b[1:-1,1:-1] = a   # add zeros around the edge so the nearest neighbor is zero outside
     degree = len(kx)-1
 
     yo, xo = np.mgrid[0:ylen, 0:xlen]
+    byo, bxo = np.mgrid[-1:ylen+1, -1:xlen+1]
     xi = np.zeros((ylen,xlen))
     yi = np.zeros((ylen,xlen))
 
@@ -57,8 +62,8 @@ def poly_2d(a, kx, ky):
             xi = xi + kx[j, i]*(xo**j)*(yo**i)
             yi = yi + ky[j, i]*(xo**j)*(yo**i)
 
-    points = np.array([yo.reshape(xlen*ylen),xo.reshape(xlen*ylen)]).T
-    ao = griddata(points, a.reshape(xlen*ylen), (yi, xi), method='nearest', fill_value=0)
+    points = np.array([byo.reshape(bxlen*bylen),bxo.reshape(bxlen*bylen)]).T
+    ao = griddata(points, b.reshape(bxlen*bylen), (yi, xi), method='nearest', fill_value=0)
     return ao
 
 def poly_pt(xpt,ypt,kx,ky):

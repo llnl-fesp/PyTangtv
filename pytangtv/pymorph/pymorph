@@ -742,7 +742,7 @@ class UI(Frame):
                     self.fdirty = True
                 if self.fdirty:
                     self.mimage = pImage.fromarray(mi.poly_2d(
-                        np.asarray(self.image), self.kx, self.ky))
+                        np.asarray(self.image), self.kx, self.ky)).convert('L')
                     self.fdirty = False
                 im1 = self.mimage
             else:
@@ -781,7 +781,7 @@ class UI(Frame):
                         self.bdirty = True
                     if self.bdirty:
                         self.mimage = pImage.fromarray(mi.poly_2d(
-                            np.asarray(im2), self.kx, self.ky))
+                            np.asarray(im2), self.kx, self.ky)).convert('L')
                         self.bdirty = False
                     im2 = self.mimage
                 else:
