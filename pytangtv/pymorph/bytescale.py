@@ -46,16 +46,17 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
            [52, 34, 28]], dtype=uint8)
 
     """
+    ldata = data
     if data.dtype == np.uint8:
-        return data
+        ldata = np.cast[np.float32](data)
 
     if high < low:
         raise ValueError("`high` should be larger than `low`.")
 
     if cmin is None:
-        cmin = data.min()
+        cmin = ldata.min()
     if cmax is None:
-        cmax = data.max()
+        cmax = ldata.max()
 
     cscale = cmax - cmin
     if cscale < 0:
@@ -64,7 +65,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
         cscale = 1
 
     scale = float(high - low) / cscale
-    bytedata = (data * 1.0 - cmin) * scale + 0.4999
+    bytedata = (ldata * 1.0 - cmin) * scale + 0.4999
     bytedata[bytedata > high] = high
     bytedata[bytedata < 0] = 0
     return np.cast[np.uint8](bytedata) + np.cast[np.uint8](low)
