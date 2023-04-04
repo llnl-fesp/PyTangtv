@@ -9,3 +9,4 @@ Pymask - program to generate an image mask by freehand drawing over an image. Dr
 PyAlign - program to do simple, rigid, image plane transformations of the loaded image. A background image can be loaded and then the two layered to facilitate aligning the two.
 
 PyMorph - used to determine the foreground->background control points to do polynomial spatial warping of the foreground to match the background. Used to fix spherical aberations in an image.
+
