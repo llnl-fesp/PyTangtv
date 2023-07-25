@@ -7,7 +7,7 @@ from glob import glob
 
 
 install_requires = [
-     'requests',
+     'requests','ruamel.yaml.clib','ruamel.yaml','numpy','scipy','Pillow','packaging'
 ]
 if sys.version_info < (3,):
     install_requires.append('tk')
@@ -20,7 +20,7 @@ elif sys.version_info >= (3,5):
 
 setup(
     name='PyTangtv',
-    version='0.2.26',
+    version='0.2.28',
     packages=['pytangtv','pytangtv.pymorph','pytangtv.pyalign','pytangtv.pymask','pytangtv.picker'],
     maintainer='Bill Meyer',
     maintainer_email='meyer8@llnl.gov',

@@ -1,16 +1,6 @@
 
 from __future__ import print_function
 try:
-    from PIL import ImageEnhance
-    from PIL import ImageOps
-    from PIL import ImageFilter
-    from PIL import Image as pImage
-except:
-    import ImageEnhance
-    import ImageOps
-    import ImageFilter
-    import Image as pImage
-try:
    from Tkinter import *
    from tkFileDialog import askopenfilename, asksaveasfilename
 except:
@@ -62,14 +52,6 @@ class mymenu:
         mb_file = Menubutton(menubar, text='File')
         mb_file.pack(side=LEFT)
         mb_file.menu = Menu(mb_file)
-        mb_file.menu.add_command(label='load image', command=self.loadimage,
-                                 accelerator="Ctrl+o")
-        mb_file.menu.add_command(label='load background', command=self.loadbg,
-                                 accelerator="Ctrl+b")
-        mb_file.menu.add_command(label='load mds shot', command=self.loadshotmds,
-                                 accelerator="Ctrl+d")
-        mb_file.menu.add_command(label='load savefile shot', command=self.loadshotdat,
-                                 accelerator="Ctrl+i")
         mb_file.menu.add_command(label='show warp', command=self.showwarp,
                                  accelerator="Ctrl+w")
         mb_file.menu.add_command(label='load warp yaml', command=self.loadwarpyaml,
@@ -120,6 +102,10 @@ class mymenu:
         mb_func.pack(side=LEFT)
         mb_func.menu = Menu(mb_func)
         mb_func.menu.add_command(label='load image', command=self.loadimage)
+        mb_func.menu.add_command(label='load mds shot', command=self.loadshotmds,
+                                 accelerator="Ctrl+d")
+        mb_func.menu.add_command(label='load savefile shot', command=self.loadshotdat,
+                                 accelerator="Ctrl+i")
         mb_func.menu.add_command(label='save image', command=self.saveimage)
         mb_func.menu.add_command(label='reset image', command=self.resetimage)
         mb_func.menu.add_command(
@@ -142,6 +128,8 @@ class mymenu:
         mb_bgfunc.pack(side=LEFT)
         mb_bgfunc.menu = Menu(mb_bgfunc)
         mb_bgfunc.menu.add_command(label='load bgimage', command=self.loadbg)
+        mb_bgfunc.menu.add_command(label='load mds shot', command=self.loadbgshotmds)
+        mb_bgfunc.menu.add_command(label='load savefile shot', command=self.loadbgshotdat)
         mb_bgfunc.menu.add_command(label='save bgimage', command=self.savebg)
         mb_bgfunc.menu.add_command(label='reset bgimage', command=self.resetbg)
         mb_bgfunc.menu.add_command(
@@ -172,12 +160,14 @@ class mymenu:
     def loadshotmds(self, event=None):
         self.w = popupShotWindow(self.root)
         self.root.wait_window(self.w.top)
-        self.ui.load_data_from_mdsplus(self.ui.mdsdata, shot=self.w.value)
+        self.ui.fimage.load_data_from_mdsplus(shot=self.w.value)
+        self.ui.refresh()
 
     def loadshotdat(self, event=None):
         sfilename = str(askopenfilename(filetypes=[("dat", "*.dat")]))
         if sfilename != None:
-            self.ui.load_data_from_savefile(sfilename=sfilename)
+            self.ui.fimage.load_data_from_savefile(sfilename=sfilename)
+        self.ui.refresh()
 
 
     def savewarpyaml(self, event=None):
@@ -199,41 +189,27 @@ class mymenu:
         jfilename = str(askopenfilename(filetypes=[("json", "*.json")]))
         if jfilename != None:
             self.ui.loadwarpjson(jfilename=jfilename)
+        self.ui.refresh()
 
     def loadwarpmds(self, event=None):
         self.w = popupShotWindow(self.root)
         self.root.wait_window(self.w.top)
         self.ui.load_warp_from_mdsplus(self.ui.mdswarp, shot=self.w.value)
-
-    def loaddatamds(self, event=None):
-        self.ui.load_data_from_mdsplus(self.ui.mdsdataargs)
+        self.ui.refresh()
 
     def loadimage(self, event=None):
-        ifilename = str(askopenfilename(filetypes=[("tiff", ".tif .tiff"),
-                                              ("png", "*.png"),
-                                              ("jpg", "*.jpg"),
-                                              ("allfiles", "*")]))
-        if ifilename != None:
-            self.ui.image = pImage.open(ifilename).convert(
-                'L').resize((self.ui.W, self.ui.H), pImage.ANTIALIAS)
-            self.ui.buimage = self.ui.image
-            self.ui.refresh()
-            self.ui.fdirty = True
+        self.ui.fimage.loadimage()
+        self.ui.refresh()
 
     def showwarp(self, event=None):
         self.ui.showwarp()
 
     def resetimage(self):
-        self.ui.image = self.ui.buimage
-        self.ui.fdirty = True
+        self.ui.fimage.reset()
         self.ui.refresh()
 
     def resetbg(self):
-        self.ui.bgimage = self.ui.bubgimage
-        self.ui.transpose = False
-        self.ui.bdirty = True
-        self.ui.vflip = False
-        self.ui.hflip = False
+        self.ui.bgimage.reset()
         self.ui.refresh()
 
     def saveimage(self, event=None):
@@ -256,123 +232,102 @@ class mymenu:
             self.ui.im2.save(ifilename)
 
     def loadbg(self, event=None):
-        ifilename = str(askopenfilename(filetypes=[("tiff", ".tif .tiff"),
-                                              ("png", "*.png"),
-                                              ("jpg", "*.jpg"),
-                                              ("allfiles", "*")]))
-        if ifilename != None:
-            self.ui.bgimage = pImage.open(ifilename).convert('L')
-            self.ui.bubgimage = self.ui.bgimage
-            self.ui.refresh()
-            self.ui.bdirty = True
-            self.ui.vidnum = 0
+        self.ui.bgimage.loadimage()
+        self.ui.refresh()
+
+    def loadbgshotmds(self, event=None):
+        self.w = popupShotWindow(self.root)
+        self.root.wait_window(self.w.top)
+        self.ui.bgimage.load_data_from_mdsplus(shot=self.w.value)
+        self.ui.refresh()
+
+    def loadbgshotdat(self, event=None):
+        sfilename = str(askopenfilename(filetypes=[("dat", "*.dat")]))
+        if sfilename != None:
+            self.ui.bgimage.load_data_from_savefile(sfilename=sfilename)
+        self.ui.refresh()
+
 
     def flipimv(self):
-        self.ui.image = self.ui.image.transpose(pImage.FLIP_TOP_BOTTOM)
-        self.ui.fdirty = True
-        self.ui.refresh()
+        if self.ui.fimage != None:
+           self.ui.fimage.dovflip()
+           self.ui.refresh()
 
     def flipimh(self):
-        self.ui.image = self.ui.image.transpose(pImage.FLIP_LEFT_RIGHT)
-        self.ui.fdirty = True
-        self.ui.refresh()
+        if self.ui.fimage != None:
+           self.ui.fimage.dohflip()
+           self.ui.refresh()
 
     def transposeim(self):
-        self.ui.image = self.ui.image.transpose(pImage.TRANSPOSE)
-        self.ui.fdirty = True
-        self.ui.refresh()
+        if self.ui.fimage != None:
+           self.ui.fimage.dotranspose()
+           self.ui.refresh()
 
     def flipbgv(self):
         if self.ui.bgimage != None:
-            self.ui.bgimage = self.ui.bgimage.transpose(pImage.FLIP_TOP_BOTTOM)
-            self.ui.vflip = True
-            self.ui.bdirty = True
+            self.ui.bgimage.dovflip()
             self.ui.refresh()
 
     def flipbgh(self):
         if self.ui.bgimage != None:
-            self.ui.hflip = True
-            self.ui.bgimage = self.ui.bgimage.transpose(pImage.FLIP_LEFT_RIGHT)
-            self.ui.bdirty = True
+            self.ui.bgimage.dohflip()
             self.ui.refresh()
 
     def transposebg(self):
         if self.ui.bgimage != None:
-            self.ui.transpose = True
-            self.ui.bgimage = self.ui.bgimage.transpose(pImage.TRANSPOSE)
-            self.ui.bdirty = True
+            self.ui.bgimage.dotranspose()
             self.ui.refresh()
 
     def sharp(self):
-        d = ImageEnhance.Sharpness(self.ui.image)
-        self.ui.image = d.enhance(2.0)
-        self.ui.fdirty = True
+        self.ui.fimage.sharp()
         self.ui.refresh()
 
     def blur(self):
-        d = ImageEnhance.Sharpness(self.ui.image)
-        self.ui.image = d.enhance(0.0)
-        self.ui.fdirty = True
+        self.ui.fimage.blur()
         self.ui.refresh()
 
     def med3(self):
-        self.ui.image = self.ui.image.filter(ImageFilter.MedianFilter(3))
-        self.ui.fdirty = True
+        self.ui.fimage.med3()
         self.ui.refresh()
 
     def med5(self):
-        self.ui.image = self.ui.image.filter(ImageFilter.MedianFilter(5))
-        self.ui.fdirty = True
+        self.ui.fimage.med5()
         self.ui.refresh()
 
     def med7(self):
-        self.ui.image = self.ui.image.filter(ImageFilter.MedianFilter(7))
-        self.ui.fdirty = True
+        self.ui.fimage.med7()
         self.ui.refresh()
 
     def autoc(self):
-        self.ui.image = ImageOps.autocontrast(self.ui.image)
-        self.ui.fdirty = True
+        self.ui.fimage.autoc()
         self.ui.refresh()
 
     def equalize(self):
-        self.ui.image = ImageOps.equalize(self.ui.image)
-        self.ui.fdirty = True
+        self.ui.fimage.equalize()
         self.ui.refresh()
 
     def edge(self):
-        self.ui.image = self.ui.image.filter(ImageFilter.FIND_EDGES)
-        self.ui.fdirty = True
+        self.ui.fimage.edge()
         self.ui.refresh()
-#   def wiener(self):
-#        self.ui.image =  scipy.signal.wiener(self.ui.image,[5,5],noise=None)
-#        self.ui.refresh()
 
     def bgsharp(self):
-        d = ImageEnhance.Sharpness(self.ui.bgimage)
-        self.ui.bgimage = d.enhance(2.0)
-        self.ui.bdirty = True
+        self.ui.bgimage.sharp()
         self.ui.refresh()
 
     def bgblur(self):
-        d = ImageEnhance.Sharpness(self.ui.bgimage)
-        self.ui.bgimage = d.enhance(0.0)
-        self.ui.bdirty = True
+        self.ui.bgimage.blur()
         self.ui.refresh()
 
     def bgautoc(self):
-        self.ui.bgimage = ImageOps.autocontrast(self.ui.bgimage)
-        self.ui.bdirty = True
+        self.ui.bgimage.autoc()
         self.ui.refresh()
 
     def bgequalize(self):
-        self.ui.bgimage = ImageOps.equalize(self.ui.bgimage)
-        self.ui.bdirty = True
+        self.ui.bgimage.equalize()
         self.ui.refresh()
 
     def bgedge(self):
-        self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.FIND_EDGES)
-        self.ui.bdirty = True
+        self.ui.bgimage.edge()
         self.ui.refresh()
 
     def bl(self):
@@ -381,18 +336,15 @@ class mymenu:
         self.ui.refresh()
 
     def bgmed3(self):
-        self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.MedianFilter(3))
-        self.ui.bdirty = True
+        self.ui.bgimage.med3()
         self.ui.refresh()
 
     def bgmed5(self):
-        self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.MedianFilter(5))
-        self.ui.bdirty = True
+        self.ui.bgimage.med5()
         self.ui.refresh()
 
     def bgmed7(self):
-        self.ui.bgimage = self.ui.bgimage.filter(ImageFilter.MedianFilter(7))
-        self.ui.bdirty = True
+        self.ui.bgimage.med7()
         self.ui.refresh()
 
     def quit(self, event=None):
