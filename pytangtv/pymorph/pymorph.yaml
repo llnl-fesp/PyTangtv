@@ -1,0 +1,162 @@
+none:
+    comment: This is a list of possible entries
+    window:
+        height: 1024
+        width: 1024
+        scale: 1.0
+        windowx: 2048
+        windowy: 2048
+'*':
+    comment: Default entries
+    window:
+        windowx: 768
+        windowy: 1500
+        height: 1024
+        width: 1024
+'irtv60':
+    comment: DIII-D 60R+2 IR Camera
+    window:
+        windowy: 513
+        windowx: 640
+        height: 513
+        width: 640
+0par:
+    comment: DIII-D 0R+1 VIS Tangential TV camera
+    window:
+        scale: 1.0
+        height: 600
+        width: 800
+        windowx: 800
+        windowy: 600
+    image:
+        dims:
+            - 240
+            - 720
+        transpose: 0
+        hflip: 0
+        vflip: 0
+    mdsplus:
+        data:
+            mdsserver: 192.168.0.198:8002
+            mdstree: tangtv
+            node: \top.tangtv.updiv_0rp1:par:standard:video_images
+0perp:
+    comment: DIII-D 0R+1 VIS Tangential TV camera
+    window:
+        scale: 1.0
+        height: 600
+        width: 800
+        windowx: 800
+        windowy: 600
+    image:
+        dims:
+            - 240
+            - 720
+        transpose: 0
+        hflip: 0
+        vflip: 0
+    mdsplus:
+        data:
+            mdsserver: 192.168.0.198:8002
+            mdstree: tangtv
+            node: \top.tangtv.updiv_0rp1:perp:standard:video_images
+240perp:
+    comment: DIII-D 240R-1 Perp VIS Tangential TV camera 
+    window:
+        scale: 1.0
+        height: 600
+        width: 800
+        windowy: 600
+        windowx: 800
+    image:
+        dims:
+            - 240
+            - 720
+        transpose: 0
+        hflip: 0
+        vflip: 0
+    mdsplus:
+        data:
+            mdsserver: 192.168.0.198:8002
+            mdstree: tangtv
+            node: \top.tangtv.lodiv_240rm1:perp:standard:video_images
+240perpnegd:
+    comment: DIII-D 240R-1 Perp NegD VIS Tangential TV camera
+    window:
+        scale: 1.0
+        height: 750
+        width: 1000
+        windowy: 750
+        windowx: 1000
+    image:
+        dims:
+            - 240
+            - 720
+        transpose: 0
+        hflip: 0
+        vflip: 0
+    mdsplus:
+        data:
+            mdsserver: 192.168.0.198:8002
+            mdstree: tangtv
+            node: \top.tangtv.lodiv_240rm1:perp:standard:video_images
+240paria:
+    comment: DIII-D 240R-1 Par VIS Tangential TV camera
+    window:
+        scale: 1.0
+        height: 600
+        width: 800
+        windowy: 600
+        windowx: 800
+    image:
+        dims:
+            - 240
+            - 720
+        transpose: 0
+        hflip: 0
+        vflip: 0
+    mdsplus:
+        data:
+            mdsserver: 192.168.0.198:8002
+            mdstree: tangtv
+            node: \top.tangtv.lodiv_240rm1:par:intensified:video_images
+periscope:
+    comment: DIII-D 75R0 FIR camera
+    window:
+        scale: 1.0
+        height: 640
+        width: 514
+        windowx: 1026
+        windowy: 1280
+    image:
+        dims:
+            - 514
+            - 640
+        transpose: 1
+        hflip: 1
+        vflip: 1
+    mdsplus:
+        warp:
+            mdsserver: 127.0.0.1
+            mdstree: irtv
+            Xi: \top.irtv:peri75r0:digital_cam:warp:xi
+            Yi: \top.irtv:peri75r0:digital_cam:warp:yi
+            Xo: \top.irtv:peri75r0:digital_cam:warp:xo
+            Yo: \top.irtv:peri75r0:digital_cam:warp:yo
+            rendering: \top.irtv:peri75r0:digital_cam:rendering
+            degree: \top.irtv:peri75r0:digital_cam:warp:plydegree
+            xshift: \top.irtv:peri75r0:digital_cam:warp:xshift
+            yshift: \top.irtv:peri75r0:digital_cam:warp:yshift
+            rotation: \top.irtv:peri75r0:digital_cam:warp:rotation
+            vflip: 1
+        data:
+            mdsserver: 192.168.0.198:8002
+            mdstree: irtv
+            node: \top.irtv.peri75r0.digital_cam:digital_raw
+    savefile:
+        warp: {}
+        data:
+            varname: viddata
+            transpose: 1
+            hflip: 1
+            vflip: 1
