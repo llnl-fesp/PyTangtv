@@ -83,8 +83,8 @@ morph = False
 jopts = []
 
 try:
-    yconffile = str(Path.home())+'/pymorph.yaml'
-    jconffile = str(Path.home())+'/pymorph.json'
+    yconffile = str(Path.home())+'/.pymorph.yaml'
+    jconffile = str(Path.home())+'/.pymorph.json'
     if os.path.exists(yconffile):
        with open(yconffile, 'r') as f:
           jopts = yaml.safe_load(f)

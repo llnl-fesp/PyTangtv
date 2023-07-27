@@ -172,7 +172,7 @@ class mymenu:
         self.config = yaml.safe_load(response.content.decode("utf-8"))
 
     def saveconfig(self):
-        with open(str(Path.home())+'/junk.yaml', 'w') as outfile:
+        with open(str(Path.home())+'/.pymorph.yaml', 'w') as outfile:
              outfile.write("# \n")
              outfile.write("# Written by "+os.getlogin()+"\n")
              outfile.write("# on  "+time.ctime()+"\n")
