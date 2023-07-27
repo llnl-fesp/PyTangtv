@@ -64,6 +64,7 @@ thisfile = os.path.realpath(pytangtv.__file__)
 thispath = os.path.dirname(thisfile)
 bitmaps = thispath+'/bitmaps'
 
+
 spawned = False
 w = 0
 h = 0
@@ -147,7 +148,6 @@ if '--diag' in optdict:
                 h = defaults['height']
             if 'width' in defaults:
                 w = defaults['width']
-print(diag)
 if 'mdsplus' in diag:
     mdsargs=diag['mdsplus']
 else:
@@ -237,22 +237,12 @@ class Images():
         if 'varname' in savefiledata:
             varname=savefiledata['varname']
         self.viddata=sf[varname]
-        self.ui.cminentry.delete(0, END)
-        self.ui.cminentry.insert(0, "%d" % (self.viddata.min()))
-        self.ui.cmaxentry.delete(0, END)
-        self.ui.cmaxentry.insert(0, "%d" % (self.viddata.max()))
+        self.cmin = self.viddata.min()
+        self.cmax = self.viddata.max()
         self.vidind=0
         self.vidnum=self.viddata.shape[0]
-        self.ui.dlabel.set('Frame(%d)' % (self.ui.vidnum,))
-        self.transpose=False
-        self.vflip=False
-        self.hflip=False
-        if 'transpose' in self.savefiledata and self.savefiledata['transpose'] == 1:
-            self.transpose=True
-        if 'vflip' in self.savefiledata and self.savefiledata['vflip'] == 1:
-            self.vflip=True
-        if 'hflip' in self.savefiledata and self.savefiledata['hflip'] == 1:
-            self.hflip=True
+        self.ui.dlabel.set('Frame(%d)' % (self.vidnum,))
+        self.reset()
 
     def load_data_from_mdsplus(self, shot=None):
         import MDSplus as mds
@@ -261,11 +251,8 @@ class Images():
             if shot != None:
                 tree=mdsserver.openTree(self.mdsargs['data']['mdstree'], shot)
                 self.viddata=np.array(mdsserver.get(self.mdsargs['data']['node']))
-                print("got the data")
-                self.ui.cminentry.delete(0, END)
-                self.ui.cminentry.insert(0, "%d" % (self.viddata.min()))
-                self.ui.cmaxentry.delete(0, END)
-                self.ui.cmaxentry.insert(0, "%d" % (self.viddata.max()))
+                self.cmin = self.viddata.min()
+                self.cmax = self.viddata.max()
                 try:
                    if 'dims' in self.imageargs:
                       dims=self.imageargs['dims']
@@ -302,7 +289,7 @@ class Images():
                self.buimage = pImage.open(ifilename).convert('L')
                self.reset()
     def framechange(self):
-        if self.video:
+        if self.video and self.dirty:
            if self.vidind < 0:
                self.vidind=0
            elif self.vidind >= self.vidnum:
@@ -310,29 +297,27 @@ class Images():
            if self.vidnum >= 0:
                self.ui.frentry.delete(0, END)
                self.ui.frentry.insert(0, "%d" % self.vidind)
-               self.image=self.viddata[self.vidind, :, :]
+               i=np.asarray(self.viddata[self.vidind, :, :],dtype=np.float32)
+               self.image=pImage.fromarray(bytescale(i, cmin=int(self.cmin),cmax=int(self.cmax)))
         
     def update(self):
         self.dirty=False
-        if not self.video:
-           i=np.asarray(self.image, dtype=np.float32)
-        else:
-           i = self.image
+        i=np.asarray(self.image, dtype=np.float32)
         if self.transpose:
             i=i.T
         if self.vflip:
             i=np.flipud(i)
         if self.hflip:
             i=np.fliplr(i)
-        self.dimage=pImage.fromarray(bytescale(i, cmin=int(
-              self.ui.cminentry.get()), cmax=int(self.ui.cmaxentry.get())))
+
+        self.dimage=pImage.fromarray(bytescale(i, cmin=int(self.cmin),cmax=int(self.cmax)))
 
     def reset(self):
         self.dimage = self.buimage
         self.image = self.buimage
+        self.dirty = True
         if self.video:
             self.framechange()
-        self.dirty = True
         if 'transpose' in imageargs and imageargs['transpose'] == 1:
              self.transpose = True
         else:
@@ -345,6 +330,8 @@ class Images():
              self.hflip = True
         else:
              self.hflip = False
+        self.cmin = 0
+        self.cmax = 255
 
 class UI(Frame):
 
@@ -357,8 +344,6 @@ class UI(Frame):
         self.parent=master
         self.fimage=Images(im, s=s,ui=self)
         self.bgimage=Images(im, s=s,ui=self)
-        self.fdirty=True
-        self.bdirty=True
         self.mode=1
         self.degree=1
         self.warpdirection=1
@@ -422,6 +407,7 @@ class UI(Frame):
         self.mdsdata={}
         self.savefiledata={}
         self.savefilewarp={}
+        self.realdirty = True     
 
 
     def load_warp_from_mdsplus(self, shot=None):
@@ -440,7 +426,6 @@ class UI(Frame):
                 if 'hflip' in self.mdsargs and self.mdsargs['vflip'] == 1:
                     self.xi=w - 1 - self.xi
                     self.xo=w - 1 - self.xo
-                self.realdirty=True
                 self.wmarks=np.transpose((self.xi, self.yi)).tolist()
                 self.bmarks=np.transpose((self.xo, self.yo)).tolist()
                 if 'xshift' in self.mdsargs:
@@ -481,6 +466,7 @@ class UI(Frame):
             self.refresh()
         else:
             print("No MDSPlus server")
+        self.realdirty = True     
 
     def mouse_wheel(self, event):
         if event.state == 4:  # control key down
@@ -496,28 +482,37 @@ class UI(Frame):
         self.fimage.update()
         self.bgimage.update()
 
-    def range_update(self, event):
-        self.update()
+    def range_update(self,event):
+        self.refresh()
 
     def frame_update(self, event):
         self.fimage.vidind=int(self.frentry.get())
         self.bgimage.vidind=int(self.frentry.get())
+        self.fimage.dirty = True
+        self.bgimage.dirty = True
+        self.fimage.framechange()
         self.update()
 
     def frinc(self):
         self.fimage.vidind=self.fimage.vidind+1
         self.bgimage.vidind=self.bgimage.vidind+1
+        self.fimage.dirty = True
+        self.bgimage.dirty = True
+        self.fimage.framechange()
+        self.bgimage.framechange()
         self.update()
 
     def frdec(self):
         self.fimage.vidind=self.fimage.vidind-1
         self.bgimage.vidind=self.bgimage.vidind-1
+        self.fimage.dirty = True
+        self.bgimage.dirty = True
+        self.fimage.framechange()
+        self.bgimage.framechange()
         self.update()
 
 
     def update(self):
-        self.fimage.update()
-        self.bgimage.update()
         self.refresh()
 
     def mapx(self, event):
@@ -541,13 +536,13 @@ class UI(Frame):
     def selmode(self):
         global mode
         self.mode=int(mode.get())
-        self.realdirty=True
+        self.realdirty = True     
         self.refresh()
 
     def seldirection(self):
         global direction
         self.warpdirection=int(direction.get())
-        self.realdirty=True
+        self.realdirty = True     
         self.refresh()
 
     def seldeg(self):
@@ -557,13 +552,13 @@ class UI(Frame):
             self.morphbut.config(relief="sunken", image=add)
         elif morph:
             self.morphbut.config(relief="sunken", image=on)
-        self.realdirty=True
+        self.realdirty = True     
         self.refresh()
 
     def relpick(self, event):
         cx=self.mapx(event)
         cy=self.mapy(event)
-        self.realdirty=True
+        self.realdirty = True     
         self.degree=int(degree.get())
         if self.mode == 1:  # add
             self.bmarks.append([cx, cy])
@@ -579,6 +574,7 @@ class UI(Frame):
             self.xo=np.array(self.bmarks)[:, 0]
             self.yo=np.array(self.bmarks)[:, 1]
 
+        self.realdirty = True     
         self.refresh()
 
     def scrollx(self, event, step, what=None):
@@ -594,6 +590,7 @@ class UI(Frame):
             self.canvas.yview(event, step, what)
 
     def motion(self, event):
+        self.realdirty = True     
         if self.line != None:
             self.canvas.delete(self.line)
         self.x2=self.mapx(event)
@@ -602,9 +599,11 @@ class UI(Frame):
             self.x1, self.y1, self.x2, self.y2, fill='white')
 
     def mark(self, event):
+        self.realdirty = True     
         self.line=None
         cx=self.mapx(event)
         cy=self.mapy(event)
+        self.realdirty = True     
         if len(self.bmarks) >= (self.degree+1)**2:
             self.xi=np.array(self.wmarks)[:, 0]
             self.yi=np.array(self.wmarks)[:, 1]
@@ -637,11 +636,10 @@ class UI(Frame):
             del self.wmarks[i]
             del self.bmarks[i]
 
-        self.dirty=True
         self.refresh()
 
     def remmark(self, event):
-        self.realdirty=True
+        self.realdirty = True     
         self.mimage=self.image
         self.wmarks=[]
         self.bmarks=[]
@@ -656,6 +654,7 @@ class UI(Frame):
         self.refresh()
 
     def reset(self):
+        self.realdirty = True     
         self.hpos=0
         self.vpos=0
         self.rot=0
@@ -667,10 +666,10 @@ class UI(Frame):
         self.rposentry.insert(0, "%d" % self.rot)
         self.fimage.reset()
         self.bgimage.reset()
-        self.realdirty=True
         self.refresh()
 
     def rightstep(self):
+        self.realdirty = True     
         self.hstep=int(self.xstepentry.get())
         self.hpos=self.hpos + self.hstep
         self.xi=self.xi + self.hstep
@@ -678,10 +677,10 @@ class UI(Frame):
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         self.xposentry.delete(0, END)
         self.xposentry.insert(0, "%d" % self.hpos)
-        self.realdirty=True
         self.refresh()
 
     def leftstep(self):
+        self.realdirty = True     
         self.hstep=int(self.xstepentry.get())
         self.hpos=self.hpos - self.hstep
         self.xi=self.xi - self.hstep
@@ -689,10 +688,10 @@ class UI(Frame):
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         self.xposentry.delete(0, END)
         self.xposentry.insert(0, "%d" % self.hpos)
-        self.realdirty=True
         self.refresh()
 
     def downstep(self):
+        self.realdirty = True     
         self.vstep=int(self.ystepentry.get())
         self.vpos=self.vpos + self.vstep
         self.yi=self.yi + self.vstep
@@ -700,10 +699,10 @@ class UI(Frame):
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         self.yposentry.delete(0, END)
         self.yposentry.insert(0, "%d" % -self.vpos)
-        self.realdirty=True
         self.refresh()
 
     def upstep(self):
+        self.realdirty = True     
         self.vstep=int(self.ystepentry.get())
         self.vpos=self.vpos - self.vstep
         self.yi=self.yi - self.vstep
@@ -711,26 +710,29 @@ class UI(Frame):
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         self.yposentry.delete(0, END)
         self.yposentry.insert(0, "%d" % -self.vpos)
-        self.realdirty=True
         self.refresh()
 
     def rotr(self):
+        self.realdirty = True     
         self.rstep=float(self.rstepentry.get())
         self.rot=self.rot - self.rstep
+        _x = self.xi - self.fimage.W/2
+        _y = self.yi - self.fimage.H/2
+        _r = np.sqrt(_x^2 + _y^2)
+        _x = _x + _r * np.cos(np.pi/180.0*self.rot) + self.fimage.W/2
+        _y = _y + _r * np.sin(np.pi/180.0*self.rot) + self.fimage.H/2
+        self.wmarks=np.transpose((_x, _y)).tolist()
         self.rposentry.delete(0, END)
         self.rposentry.insert(0, "%g" % -self.rot)
         self.refresh()
 
     def rotl(self):
+        self.realdirty = True     
         self.rstep=float(self.rstepentry.get())
         self.rot=self.rot + self.rstep
         self.rposentry.delete(0, END)
         self.rposentry.insert(0, "%g" % -self.rot)
         self.refresh()
-
-    def iwrite(self):
-        self.refresh()
-        self.simage.save('pyalign.tiff')
 
     def showwarp(self):
         fl=['{}' for item in self.xi]
@@ -789,6 +791,7 @@ class UI(Frame):
             json.dump(warp, outfile, indent=8)
 
     def loadwarpyaml(self, yfilename='warp.yaml'):
+        self.realdirty = True     
         with open(yfilename, 'r') as infile:
             warp=yaml.safe_load(infile)
         self.xi=np.array(warp['xi'])
@@ -820,7 +823,6 @@ class UI(Frame):
             self.warptype=warp['type']
         else:
             self.warpversion=0
-        self.realdirty=True
         self.refresh()
 
 
@@ -856,11 +858,11 @@ class UI(Frame):
             self.warptype=warp['type']
         else:
             self.warpversion=0
-        self.realdirty=True
         self.refresh()
 
     def morphit(self):
         global morph
+        self.realdirty = True     
         if self.morphbut.config('relief')[-1] == 'sunken':
             self.morphbut.config(relief="raised", image=off)
             morph=False
@@ -870,15 +872,16 @@ class UI(Frame):
             else:
                 self.morphbut.config(relief="sunken", image=on)
             morph=True
-        self.dirty=True
         self.refresh()
 
     def refreshcb(self, val):
-        self.fimage.update()
-        self.bgimage.update()
         self.refresh()
 
     def refresh(self):
+        self.fimage.cmin = int(self.bminentry.get())
+        self.fimage.cmax = int(self.bmaxentry.get())
+        self.bgimage.cmin = int(self.cminentry.get())
+        self.bgimage.cmax = int(self.cmaxentry.get())
         self.fimage.update()
         self.bgimage.update()
         self.xS=float(self.xstr.get())
@@ -895,11 +898,8 @@ class UI(Frame):
                     self.kx, self.ky=mi.polywarp(
                         self.xi, self.yi, self.xo, self.yo, degree=self.degree)
                     self.realdirty=False
-                    self.fdirty=True
-                if self.fdirty:
-                    self.mimage=pImage.fromarray(mi.poly_2d(
+                self.mimage=pImage.fromarray(mi.poly_2d(
                         np.asarray(im1), self.kx, self.ky)).convert('L')
-                    self.fdirty=False
                 im1=self.mimage
             else:
                 self.morphbut.config(relief="sunken", image=add)
@@ -922,11 +922,8 @@ class UI(Frame):
                         self.kx, self.ky=mi.polywarp(
                             self.xi, self.yi, self.xo, self.yo, degree=self.degree)
                         self.realdirty=False
-                        self.bdirty=True
-                    if self.bdirty:
-                        self.mimage=pImage.fromarray(mi.poly_2d(
+                    self.mimage=pImage.fromarray(mi.poly_2d(
                             np.asarray(im2), self.kx, self.ky)).convert('L')
-                        self.bdirty=False
                     im2=self.mimage
                 else:
                     self.morphbut.config(relief="sunken", image=add)
@@ -1070,9 +1067,9 @@ if __name__ == "__main__":
     Label(frame2, text='Image range').pack(side=LEFT)
     ui.bminentry=Entry(frame2, width=10)
     ui.bminentry.pack(side=LEFT, padx=2, pady=2)
-    ui.bminentry.bind('<Key-Return>', ui.update)
+    ui.bminentry.bind('<Key-Return>', ui.range_update)
     ui.bmaxentry=Entry(frame2, width=10)
-    ui.bmaxentry.bind('<Key-Return>', ui.update)
+    ui.bmaxentry.bind('<Key-Return>', ui.range_update)
     ui.bmaxentry.pack(side=LEFT, padx=2, pady=2)
     ui.bminentry.delete(0, END)
     ui.bminentry.insert(0, "0")

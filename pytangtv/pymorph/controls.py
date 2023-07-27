@@ -44,7 +44,6 @@ class controls:
 
         Button(frame,text="Reset",command=ui.reset).pack(side=TOP)
         Button(frame,text="Refresh",command=ui.refresh).pack(side=TOP)
-        Button(frame,text="Write",command=ui.iwrite).pack(side=TOP)
 
 
         frame = Frame(topframe)
