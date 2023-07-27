@@ -1,7 +1,7 @@
 #!/Users/meyer8/opt/anaconda3/bin/python
 #
 
-import sys  # nopep8
+import sys  # nopep8 
 import os   # nopep8
 import time  # nopep8
 try:
@@ -32,7 +32,10 @@ except:
    from tkinter import ttk
    from tkinter.filedialog import askopenfilename
 #
+import requests
+from io import BytesIO
 
+from idlelib.tooltip import Hovertip
 from pkg_resources import get_distribution, DistributionNotFound
 try:
     _dist = get_distribution('PyTangtv')
@@ -41,6 +44,11 @@ except DistributionNotFound:
 else:
     _version = _dist.version
 
+def polar2z(r,theta):
+    return r * np.exp( 1j * theta )
+
+def z2polar(z):
+    return ( np.abs(z), np.angle(z) )
 
 try:
     from PIL import ImageTk, ImageDraw
@@ -100,6 +108,7 @@ except:
     print("Problem reading pymorph conf file")
     pass
 
+comdiag = 'None'
 diag = {}
 
 options = ['width=', 'height=', 'scale=',
@@ -134,6 +143,8 @@ if '--winx' in optdict:
 if '--winy' in optdict:
     winy = int(optdict['--winy'])
 if '--diag' in optdict:
+    comdiag = optdict['--diag']
+
     if optdict['--diag'] in jopts:
         diag = jopts[optdict['--diag']]
         if 'window' in diag:
@@ -148,6 +159,17 @@ if '--diag' in optdict:
                 h = defaults['height']
             if 'width' in defaults:
                 w = defaults['width']
+if comdiag == 'test':
+    diag = {'comment': 'Test diagnostic', 
+          'window': {'scale': 1.0, 'height': 600, 'width': 800, 'windowy': 600, 'windowx': 800}, 
+           'image': {'dims': [240, 720], 'transpose': 0, 'hflip': 0, 'vflip': 0}}
+    defaults = diag['window']
+    winx = defaults['windowx']
+    winy = defaults['windowy']
+    s = defaults['scale']
+    h = defaults['height']
+    w = defaults['width']
+    
 if 'mdsplus' in diag:
     mdsargs=diag['mdsplus']
 else:
@@ -276,8 +298,6 @@ class Images():
             print("No MDSPlus server")
     def loadimage(self,ifilename=None):
         self.video=False
-        print("loadimage")
-        print(ifilename)
         if ifilename == None:
            ifilename = str(askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                               ("png", "*.png"),
@@ -430,16 +450,10 @@ class UI(Frame):
                 self.bmarks=np.transpose((self.xo, self.yo)).tolist()
                 if 'xshift' in self.mdsargs:
                     xshift=mdsserver.get(self.mdsargs['xshift'])
-                    self.xposentry.delete(0, END)
-                    self.xposentry.insert(0, "%d" % xshift)
                 if 'yshift' in self.mdsargs:
                     yshift=mdsserver.get(self.mdsargs['yshift'])
-                self.yposentry.delete(0, END)
-                self.yposentry.insert(0, "%d" % yshift)
                 if 'rotation' in self.mdsargs:
                     rshift=mdsserver.get(self.mdsargs['rotation'])
-                    self.rposentry.delete(0, END)
-                    self.rposentry.insert(0, "%g" % rshift)
                 if 'degree' in self.mdsargs:
                     self.degree=mdsserver.get(self.mdsargs['degree'])
                     degree.set(self.degree)
@@ -640,7 +654,6 @@ class UI(Frame):
 
     def remmark(self, event):
         self.realdirty = True     
-        self.mimage=self.image
         self.wmarks=[]
         self.bmarks=[]
         self.kx=[]
@@ -655,83 +668,64 @@ class UI(Frame):
 
     def reset(self):
         self.realdirty = True     
-        self.hpos=0
-        self.vpos=0
-        self.rot=0
-        self.xposentry.delete(0, END)
-        self.xposentry.insert(0, "%d" % self.hpos)
-        self.yposentry.delete(0, END)
-        self.yposentry.insert(0, "%d" % self.vpos)
-        self.rposentry.delete(0, END)
-        self.rposentry.insert(0, "%d" % self.rot)
+        self.takestep(-self.hpos,-self.vpos)
+        self.takerot(-self.rot)
         self.fimage.reset()
         self.bgimage.reset()
         self.refresh()
 
+    def takestep(self,hstep,vstep):
+        self.hpos=self.hpos + hstep
+        self.vpos=self.vpos + vstep
+        self.xi=self.xi + hstep
+        self.yi=self.yi + vstep
+        self.wmarks=np.transpose((self.xi, self.yi)).tolist()
+
+    def takerot(self,rot):
+        self.rot=self.rot + rot
+        _x = self.xi - self.fimage.W/2
+        _y = self.yi - self.fimage.H/2
+        _r = np.hypot(_x,_y)
+        _a = np.degrees(np.arctan2(_y,_x))
+        _a = np.add(_a,rot)
+        self.xi =  _r * np.cos(np.deg2rad(_a)) + self.fimage.W/2
+        self.yi =  _r * np.sin(np.deg2rad(_a)) + self.fimage.H/2
+        self.wmarks=np.transpose((self.xi, self.yi)).tolist()
+
     def rightstep(self):
         self.realdirty = True     
         self.hstep=int(self.xstepentry.get())
-        self.hpos=self.hpos + self.hstep
-        self.xi=self.xi + self.hstep
-        self.wmarks=np.transpose((self.xi, self.yi)).tolist()
-        self.bmarks=np.transpose((self.xo, self.yo)).tolist()
-        self.xposentry.delete(0, END)
-        self.xposentry.insert(0, "%d" % self.hpos)
+        self.takestep(self.hstep,0)
         self.refresh()
 
     def leftstep(self):
         self.realdirty = True     
         self.hstep=int(self.xstepentry.get())
-        self.hpos=self.hpos - self.hstep
-        self.xi=self.xi - self.hstep
-        self.wmarks=np.transpose((self.xi, self.yi)).tolist()
-        self.bmarks=np.transpose((self.xo, self.yo)).tolist()
-        self.xposentry.delete(0, END)
-        self.xposentry.insert(0, "%d" % self.hpos)
+        self.takestep(-self.hstep,0)
         self.refresh()
 
     def downstep(self):
         self.realdirty = True     
         self.vstep=int(self.ystepentry.get())
-        self.vpos=self.vpos + self.vstep
-        self.yi=self.yi + self.vstep
-        self.wmarks=np.transpose((self.xi, self.yi)).tolist()
-        self.bmarks=np.transpose((self.xo, self.yo)).tolist()
-        self.yposentry.delete(0, END)
-        self.yposentry.insert(0, "%d" % -self.vpos)
+        self.takestep(0,self.vstep)
         self.refresh()
 
     def upstep(self):
         self.realdirty = True     
         self.vstep=int(self.ystepentry.get())
-        self.vpos=self.vpos - self.vstep
-        self.yi=self.yi - self.vstep
-        self.wmarks=np.transpose((self.xi, self.yi)).tolist()
-        self.bmarks=np.transpose((self.xo, self.yo)).tolist()
-        self.yposentry.delete(0, END)
-        self.yposentry.insert(0, "%d" % -self.vpos)
+        self.takestep(0,-self.vstep)
         self.refresh()
 
     def rotr(self):
         self.realdirty = True     
         self.rstep=float(self.rstepentry.get())
-        self.rot=self.rot - self.rstep
-        _x = self.xi - self.fimage.W/2
-        _y = self.yi - self.fimage.H/2
-        _r = np.sqrt(_x^2 + _y^2)
-        _x = _x + _r * np.cos(np.pi/180.0*self.rot) + self.fimage.W/2
-        _y = _y + _r * np.sin(np.pi/180.0*self.rot) + self.fimage.H/2
-        self.wmarks=np.transpose((_x, _y)).tolist()
-        self.rposentry.delete(0, END)
-        self.rposentry.insert(0, "%g" % -self.rot)
+        self.takerot(self.rstep)
         self.refresh()
 
     def rotl(self):
         self.realdirty = True     
         self.rstep=float(self.rstepentry.get())
-        self.rot=self.rot + self.rstep
-        self.rposentry.delete(0, END)
-        self.rposentry.insert(0, "%g" % -self.rot)
+        self.takerot(-self.rstep)
         self.refresh()
 
     def showwarp(self):
@@ -755,7 +749,7 @@ class UI(Frame):
         warp['yo']=self.yo.tolist()
         warp['xshift']=0
         warp['yshift']=0
-        warp['rotation']=self.rot
+        warp['rotation']=0
         warp['degree']=self.degree
         warp['type']=self.warptype
         warp['direction']=self.warpdirection
@@ -783,7 +777,7 @@ class UI(Frame):
         warp['yo']=self.yo.tolist()
         warp['xshift']=0
         warp['yshift']=0
-        warp['rotation']=self.rot
+        warp['rotation']=0
         warp['degree']=self.degree
         warp['type']=self.warptype
         warp['direction']=self.warpdirection
@@ -802,12 +796,6 @@ class UI(Frame):
         self.vpos=warp['yshift']
         self.rot=warp['rotation']
         self.degree=warp['degree']
-        self.xposentry.delete(0, END)
-        self.xposentry.insert(0, "%d" % self.hpos)
-        self.yposentry.delete(0, END)
-        self.yposentry.insert(0, "%d" % -self.vpos)
-        self.rposentry.delete(0, END)
-        self.rposentry.insert(0, "%d" % -self.rot)
         self.wmarks=np.transpose((self.xi, self.yi)).tolist()
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         if 'direction' in warp:
@@ -837,12 +825,6 @@ class UI(Frame):
         self.vpos=warp['yshift']
         self.rot=warp['rotation']
         self.degree=warp['degree']
-        self.xposentry.delete(0, END)
-        self.xposentry.insert(0, "%d" % self.hpos)
-        self.yposentry.delete(0, END)
-        self.yposentry.insert(0, "%d" % -self.vpos)
-        self.rposentry.delete(0, END)
-        self.rposentry.insert(0, "%d" % -self.rot)
         self.wmarks=np.transpose((self.xi, self.yi)).tolist()
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         if 'direction' in warp:
@@ -884,8 +866,6 @@ class UI(Frame):
         self.bgimage.cmax = int(self.cmaxentry.get())
         self.fimage.update()
         self.bgimage.update()
-        self.xS=float(self.xstr.get())
-        self.yS=float(self.ystr.get())
         xoff=0
         yoff=0
         width, height=self.fimage.buimage.size
@@ -904,10 +884,8 @@ class UI(Frame):
             else:
                 self.morphbut.config(relief="sunken", image=add)
 
-        wsize=int((float(self.fimage.buimage.size[0])*float(self.xstr.get())))
-        hsize=int((float(self.fimage.buimage.size[1])*float(self.ystr.get())))
-        # hsize = int((float(self.fimage.size[1])*float(self.xstr.get())))
-        #im1=im1.resize((wsize, hsize), pImage.Resampling.LANCZOS)
+        wsize=self.fimage.buimage.size[0]
+        hsize=self.fimage.buimage.size[1]
         dimage=im1
         self.im1=im1
         s=self.scale.get()
@@ -979,42 +957,58 @@ if __name__ == "__main__":
 
 
     root=Tk()
-    if len(args) == 0:
-        ifilename=askopenfilename(filetypes=[("tiff", ".tif .tiff"),
+    if comdiag == 'test':
+        root.title('Test diag')
+    else:
+        if len(args) == 0:
+            ifilename=askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                                ("png", "*.png"),
                                                ("allfiles", "*")])
-    else:
-        ifilename=args[0]
+        else:
+            ifilename=args[0]
 
-    root.title(ifilename)
+        root.title(ifilename)
     mymenu=menu.mymenu(root)
 
-    if s != 1:
-        im=pImage.open(ifilename).convert('L')
+    if comdiag == 'test':
+        iurl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/i.tiff'
+        response = requests.get(iurl)
+        im = pImage.open(BytesIO(response.content)).convert('L')
         w, h=im.size
         w=int(w * s)
         h=int(h * s)
-        im=Image.open(ifilename).convert('L').resize(
-            (w, h), pImage.Resampling.LANCZOS)
-    elif w != 0:
-        im=pImage.open(ifilename).convert('L')
-        iw, ih=im.size
-        s=float(w) / float(iw)
-        im=pImage.open(ifilename).convert('L').resize(
-            (w, h), pImage.Resampling.LANCZOS)
-    else:
-        im=pImage.open(ifilename).convert('L')
-        w, h=im.size
-        s=1.0
+    else: 
+        if s != 1:
+            im=pImage.open(ifilename).convert('L')
+            w, h=im.size
+            w=int(w * s)
+            h=int(h * s)
+            im=Image.open(ifilename).convert('L').resize(
+                (w, h), pImage.Resampling.LANCZOS)
+        elif w != 0:
+            im=pImage.open(ifilename).convert('L')
+            iw, ih=im.size
+            s=float(w) / float(iw)
+            im=pImage.open(ifilename).convert('L').resize(
+                (w, h), pImage.Resampling.LANCZOS)
+        else:
+            im=pImage.open(ifilename).convert('L')
+            w, h=im.size
+            s=1.0
 
     frame=Frame(root)
     frame.pack(expand=FALSE, fill=BOTH)
     ui=UI(frame, im, s, winx=winx, winy=winy)
     mymenu.addui(ui)
+    if comdiag == 'test':
+        burl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/bg.tiff'
+        response = requests.get(burl)
+        ui.bgimage = Images(pImage.open(BytesIO(response.content)).convert('L'),ui=ui)
+    else:
+        if len(args) > 1:
+            # ui.bgimage = pImage.open(args[1]).convert('L').resize((w, h), pImage.Resampling.LANCZOS)
+            ui.bgimage=Images(pImage.open(args[1]).convert('L'),ui=ui)
 
-    if len(args) > 1:
-        # ui.bgimage = pImage.open(args[1]).convert('L').resize((w, h), pImage.Resampling.LANCZOS)
-        ui.bgimage=Images(pImage.open(args[1]).convert('L'),ui=ui)
     ui.imscale=s
     controls.controls(frame, ui)
     ttk.Separator(frame, orient='horizontal').pack(fill='x', side=TOP)
@@ -1042,7 +1036,15 @@ if __name__ == "__main__":
     frame4=Frame(frame2)
     frame4.pack(side=LEFT)
     mode=IntVar()
-    Label(frame3, text='Mode').pack(side=TOP)
+    _l = Label(frame3, text='Mode')
+    _l.pack(side=TOP)
+    _m = """
+           Add, edit, delete, or hide
+           the control points used 
+           to solve for the morphing 
+           polynomial coeficients.
+           """
+    Hovertip(_l,_m)
     R1=Radiobutton(frame3, text="add", variable=mode,
                      value=1, command=ui.selmode).pack(anchor=N)
     R2=Radiobutton(frame3, text="edit", variable=mode,
@@ -1053,7 +1055,15 @@ if __name__ == "__main__":
                       value=99, command=ui.selmode).pack(anchor=N)
     mode.set(1)
     direction=IntVar()
-    Label(frame4, text='Direction').pack(side=TOP)
+    _l = Label(frame4, text='Direction')
+    _l.pack(side=TOP)
+    _m = """
+           Determines which layer is morphed. 
+
+           forward - morph the foreground to match the background
+           reverse - morph the background to match the foreground
+           """
+    Hovertip(_l,_m)
     R1=Radiobutton(frame4, text="forward", variable=direction,
                      value=1, command=ui.seldirection).pack(anchor=N)
     R2=Radiobutton(frame4, text="reverse", variable=direction,

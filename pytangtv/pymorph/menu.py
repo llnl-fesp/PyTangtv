@@ -1,4 +1,3 @@
-
 from __future__ import print_function
 try:
    from Tkinter import *
@@ -7,8 +6,16 @@ except:
    from tkinter import *
    from tkinter.filedialog import askopenfilename, asksaveasfilename
 
+try:
+    from pathlib import Path
+except:
+    from pathlib2 import Path
+
 import sys
+import os
+import time
 #import scipy.signal
+import requests,yaml
 
 
 class popupShotWindow:
@@ -52,6 +59,8 @@ class mymenu:
         mb_file = Menubutton(menubar, text='File')
         mb_file.pack(side=LEFT)
         mb_file.menu = Menu(mb_file)
+        mb_file.menu.add_command(label='load remote config', command=self.getconfig)
+        mb_file.menu.add_command(label='save config', command=self.saveconfig)
         mb_file.menu.add_command(label='show warp', command=self.showwarp,
                                  accelerator="Ctrl+w")
         mb_file.menu.add_command(label='load warp yaml', command=self.loadwarpyaml,
@@ -69,12 +78,12 @@ class mymenu:
         mb_file.menu.add_separator()
         mb_file.menu.add_command(label='quit', command=self.quit,
                                  accelerator="Ctrl+q")
-        mb_mask = Menubutton(menubar, text='Masks')
+        mb_mask = Menubutton(menubar, text='Layers')
         mb_mask.pack(side=LEFT)
         self.v = IntVar()
         mb_mask.menu = Menu(mb_mask)
         mb_mask.menu.add_radiobutton(
-            label='Image only', variable=self.v, state=ACTIVE, value=0, command=self.bl)
+            label='FG only', variable=self.v, state=ACTIVE, value=0, command=self.bl)
         mb_mask.menu.add_radiobutton(
             label='BG only', variable=self.v, value=-1, command=self.bl)
         mb_mask.menu.add_separator()
@@ -95,10 +104,10 @@ class mymenu:
         mb_mask.menu.add_radiobutton(
             label='Mult', variable=self.v, value=8, command=self.bl)
         mb_mask.menu.add_separator()
-        mb_mask.menu.add_radiobutton(
+        _m = mb_mask.menu.add_radiobutton(
             label='Blend', variable=self.v, value=9, command=self.bl)
 
-        mb_func = Menubutton(menubar, text='Image')
+        mb_func = Menubutton(menubar, text='FGImage')
         mb_func.pack(side=LEFT)
         mb_func.menu = Menu(mb_func)
         mb_func.menu.add_command(label='load image', command=self.loadimage)
@@ -127,11 +136,11 @@ class mymenu:
         mb_bgfunc = Menubutton(menubar, text='BGImage')
         mb_bgfunc.pack(side=LEFT)
         mb_bgfunc.menu = Menu(mb_bgfunc)
-        mb_bgfunc.menu.add_command(label='load bgimage', command=self.loadbg)
+        mb_bgfunc.menu.add_command(label='load image', command=self.loadbg)
         mb_bgfunc.menu.add_command(label='load mds shot', command=self.loadbgshotmds)
         mb_bgfunc.menu.add_command(label='load savefile shot', command=self.loadbgshotdat)
-        mb_bgfunc.menu.add_command(label='save bgimage', command=self.savebg)
-        mb_bgfunc.menu.add_command(label='reset bgimage', command=self.resetbg)
+        mb_bgfunc.menu.add_command(label='save image', command=self.savebg)
+        mb_bgfunc.menu.add_command(label='reset image', command=self.resetbg)
         mb_bgfunc.menu.add_command(
             label='flip bg vertical', command=self.flipbgv)
         mb_bgfunc.menu.add_command(
@@ -156,6 +165,20 @@ class mymenu:
 
     def addui(self, ui):
         self.ui = ui
+
+    def getconfig(self):
+        url = 'https://github.com/llnl-fesp/PyTangtv/raw/main/pytangtv/pymorph/pymorph.yaml'
+        response = requests.get(url)
+        self.config = yaml.safe_load(response.content.decode("utf-8"))
+
+    def saveconfig(self):
+        with open(str(Path.home())+'/junk.yaml', 'w') as outfile:
+             outfile.write("# \n")
+             outfile.write("# Written by "+os.getlogin()+"\n")
+             outfile.write("# on  "+time.ctime()+"\n")
+             outfile.write("# \n")
+             yaml.dump(self.config, outfile,indent=4,default_flow_style=False)
+
 
     def loadshotmds(self, event=None):
         self.w = popupShotWindow(self.root)
