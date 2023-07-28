@@ -169,6 +169,16 @@ if comdiag == 'test':
     s = defaults['scale']
     h = defaults['height']
     w = defaults['width']
+elif comdiag == 'test2':
+    diag = {'comment': 'Test periscope diagnostic', 
+          'window': {'scale': 1.0, 'height': 640, 'width': 514, 'windowy': 1280, 'windowx': 1026}, 
+           'image': {'dims': [514, 640], 'transpose': 1, 'hflip': 0, 'vflip': 1}}
+    defaults = diag['window']
+    winx = defaults['windowx']
+    winy = defaults['windowy']
+    s = defaults['scale']
+    h = defaults['height']
+    w = defaults['width']
     
 if 'mdsplus' in diag:
     mdsargs=diag['mdsplus']
@@ -957,7 +967,7 @@ if __name__ == "__main__":
 
 
     root=Tk()
-    if comdiag == 'test':
+    if comdiag == 'test' or comdiag == 'test2':
         root.title('Test diag')
     else:
         if len(args) == 0:
@@ -972,6 +982,13 @@ if __name__ == "__main__":
 
     if comdiag == 'test':
         iurl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/i.tiff'
+        response = requests.get(iurl)
+        im = pImage.open(BytesIO(response.content)).convert('L')
+        w, h=im.size
+        w=int(w * s)
+        h=int(h * s)
+    elif comdiag == 'test2':
+        iurl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/i2.png'
         response = requests.get(iurl)
         im = pImage.open(BytesIO(response.content)).convert('L')
         w, h=im.size
@@ -1001,6 +1018,10 @@ if __name__ == "__main__":
     ui=UI(frame, im, s, winx=winx, winy=winy)
     mymenu.addui(ui)
     if comdiag == 'test':
+        burl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/bg.tiff'
+        response = requests.get(burl)
+        ui.bgimage = Images(pImage.open(BytesIO(response.content)).convert('L'),ui=ui)
+    elif comdiag == 'test2':
         burl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/bg.tiff'
         response = requests.get(burl)
         ui.bgimage = Images(pImage.open(BytesIO(response.content)).convert('L'),ui=ui)

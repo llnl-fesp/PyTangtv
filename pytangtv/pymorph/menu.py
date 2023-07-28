@@ -59,8 +59,7 @@ class mymenu:
         mb_file = Menubutton(menubar, text='File')
         mb_file.pack(side=LEFT)
         mb_file.menu = Menu(mb_file)
-        mb_file.menu.add_command(label='load remote config', command=self.getconfig)
-        mb_file.menu.add_command(label='save config', command=self.saveconfig)
+        mb_file.menu.add_command(label='download config', command=self.getconfig)
         mb_file.menu.add_command(label='show warp', command=self.showwarp,
                                  accelerator="Ctrl+w")
         mb_file.menu.add_command(label='load warp yaml', command=self.loadwarpyaml,
@@ -169,15 +168,13 @@ class mymenu:
     def getconfig(self):
         url = 'https://github.com/llnl-fesp/PyTangtv/raw/main/pytangtv/pymorph/pymorph.yaml'
         response = requests.get(url)
-        self.config = yaml.safe_load(response.content.decode("utf-8"))
-
-    def saveconfig(self):
+        config = yaml.safe_load(response.content.decode("utf-8"))
         with open(str(Path.home())+'/.pymorph.yaml', 'w') as outfile:
              outfile.write("# \n")
              outfile.write("# Written by "+os.getlogin()+"\n")
              outfile.write("# on  "+time.ctime()+"\n")
              outfile.write("# \n")
-             yaml.dump(self.config, outfile,indent=4,default_flow_style=False)
+             yaml.dump(config, outfile,indent=4,default_flow_style=False)
 
 
     def loadshotmds(self, event=None):
