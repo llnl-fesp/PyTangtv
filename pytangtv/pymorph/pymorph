@@ -172,7 +172,7 @@ if comdiag == 'test':
 elif comdiag == 'test2':
     diag = {'comment': 'Test periscope diagnostic', 
           'window': {'scale': 1.0, 'height': 640, 'width': 514, 'windowy': 1280, 'windowx': 1026}, 
-           'image': {'dims': [514, 640], 'transpose': 1, 'hflip': 0, 'vflip': 1}}
+           'image': {'dims': [514, 640], 'transpose': 0, 'hflip': 0, 'vflip': 0}}
     defaults = diag['window']
     winx = defaults['windowx']
     winy = defaults['windowy']
@@ -1022,7 +1022,7 @@ if __name__ == "__main__":
         response = requests.get(burl)
         ui.bgimage = Images(pImage.open(BytesIO(response.content)).convert('L'),ui=ui)
     elif comdiag == 'test2':
-        burl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/bg.tiff'
+        burl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/bg2.png'
         response = requests.get(burl)
         ui.bgimage = Images(pImage.open(BytesIO(response.content)).convert('L'),ui=ui)
     else:
