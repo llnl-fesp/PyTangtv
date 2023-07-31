@@ -7,7 +7,7 @@ from glob import glob
 
 
 install_requires = [
-     'requests','ruamel.yaml.clib','ruamel.yaml','numpy','scipy','Pillow','packaging'
+     'requests','pyyaml','numpy','scipy','Pillow','packaging'
 ]
 if sys.version_info < (3,):
     install_requires.append('tk')
