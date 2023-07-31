@@ -34,6 +34,7 @@ except:
 #
 import requests
 from io import BytesIO
+import argparse
 
 from idlelib.tooltip import Hovertip
 from pkg_resources import get_distribution, DistributionNotFound
@@ -73,7 +74,6 @@ thispath = os.path.dirname(thisfile)
 bitmaps = thispath+'/bitmaps'
 
 
-spawned = False
 w = 0
 h = 0
 s = 1.0
@@ -111,54 +111,47 @@ except:
 comdiag = 'None'
 diag = {}
 
-options = ['width=', 'height=', 'scale=',
-    'spawn', 'winx=', 'winy=', 'diag=', 'version']
-optlist, args = getopt.getopt(sys.argv[1:], 'vult:w:h:s:', options)
-optdict = {}
-sys.stderr.write("\n")
-for o in optlist:
-    optdict.update({o[0]: o[1]})
-if '-w' in optdict:
-    w = int(optdict['-w'])
-if '--width' in optdict:
-    w = int(optdict['--width'])
-if '-s' in optdict:
-    s = float(optdict['-s'])
-if '-v' in optdict:
-    print("Version : ", _version)
-    sys.exit(0)
-if '--version' in optdict:
-    print("Version : ", _version)
-    sys.exit(0)
-if '--scale' in optdict:
-    s = float(optdict['--scale'])
-if '-h' in optdict:
-    h = int(optdict['-h'])
-if '--height' in optdict:
-    h = int(optdict['--height'])
-if '--spawn' in optdict:
-    spawned = True
-if '--winx' in optdict:
-    winx = int(optdict['--winx'])
-if '--winy' in optdict:
-    winy = int(optdict['--winy'])
-if '--diag' in optdict:
-    comdiag = optdict['--diag']
+parser = argparse.ArgumentParser(
+     prog='pymorph',
+     description='Helps select control points for polynomial image warping.',
+     epilog='Try test diagnostic with "pymorph --diag=test"')
 
-    if optdict['--diag'] in jopts:
-        diag = jopts[optdict['--diag']]
-        if 'window' in diag:
-            defaults = diag['window']
-            if 'windowx' in defaults:
-                winx = defaults['windowx']
-            if 'windowy' in defaults:
-                winy = defaults['windowy']
-            if 'scale' in defaults:
-                s = defaults['scale']
-            if 'height' in defaults:
-                h = defaults['height']
-            if 'width' in defaults:
-                w = defaults['width']
+
+parser.add_argument('--width',type=int,help='pixel width of scrollable image window',default=0)
+parser.add_argument('--height',type=int,help='pixel height of scrollable image window',default=0)
+parser.add_argument('--scale',type=int,help='integer scaling factor of scrollable image window',default=1.0)
+parser.add_argument('--winx',type=int,help='pixel width of application',default=640)
+parser.add_argument('--winy',type=int,help='pixel height of application',default=860)
+parser.add_argument('--diag',type=str,help='Diagnostic system nickname in config file',default='None')
+parser.add_argument('--version',action='store_true',help='Print code version')
+parser.add_argument('fgfilename',type=str,nargs='?')
+parser.add_argument('bgfilename',type=str,nargs='?')
+
+args = parser.parse_args()
+
+if args.version:
+    print("Version : ", _version)
+    sys.exit(0)
+w = args.width
+h = args.height
+s = args.scale
+winx = args.winx
+winy = args.winy
+comdiag = args.diag
+if comdiag in jopts:
+    diag = jopts[optdict['--diag']]
+    if 'window' in diag:
+        defaults = diag['window']
+        if 'windowx' in defaults:
+            winx = defaults['windowx']
+        if 'windowy' in defaults:
+            winy = defaults['windowy']
+        if 'scale' in defaults:
+            s = defaults['scale']
+        if 'height' in defaults:
+            h = defaults['height']
+        if 'width' in defaults:
+            w = defaults['width']
 if comdiag == 'test':
     diag = {'comment': 'Test diagnostic', 
           'window': {'scale': 1.0, 'height': 600, 'width': 800, 'windowy': 600, 'windowx': 800}, 
@@ -424,7 +417,6 @@ class UI(Frame):
         self.vstep=5
         self.vpos=0
         self.rstep=1
-        self.spawned=spawned
         self.rot=0
         self.bl=0
         self.wmarks=[]
@@ -970,12 +962,12 @@ if __name__ == "__main__":
     if comdiag == 'test' or comdiag == 'test2':
         root.title('Test diag')
     else:
-        if len(args) == 0:
+        if args.fgfilename == None:
             ifilename=askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                                ("png", "*.png"),
                                                ("allfiles", "*")])
         else:
-            ifilename=args[0]
+            ifilename=args.fgfilename
 
         root.title(ifilename)
     mymenu=menu.mymenu(root)
@@ -1026,9 +1018,9 @@ if __name__ == "__main__":
         response = requests.get(burl)
         ui.bgimage = Images(pImage.open(BytesIO(response.content)).convert('L'),ui=ui)
     else:
-        if len(args) > 1:
+        if args.bgfilename != None:
             # ui.bgimage = pImage.open(args[1]).convert('L').resize((w, h), pImage.Resampling.LANCZOS)
-            ui.bgimage=Images(pImage.open(args[1]).convert('L'),ui=ui)
+            ui.bgimage=Images(pImage.open(args.bgfilename).convert('L'),ui=ui)
 
     ui.imscale=s
     controls.controls(frame, ui)
