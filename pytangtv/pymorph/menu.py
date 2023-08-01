@@ -2,9 +2,11 @@ from __future__ import print_function
 try:
    from Tkinter import *
    from tkFileDialog import askopenfilename, asksaveasfilename
+   import tkMessageBox as mbox
 except:
    from tkinter import *
    from tkinter.filedialog import askopenfilename, asksaveasfilename
+   from tkinter import messagebox as mbox
 
 try:
     from pathlib import Path
@@ -16,14 +18,14 @@ import os
 import time
 #import scipy.signal
 import requests,yaml
-
+from pytangtv.pymorph import help
 
 class popupShotWindow:
     def __init__(self, root):
         top = self.top = Toplevel(root)
         self.l = Label(top, text="Enter shot")
         self.l.pack()
-        self.e = Entry(top)
+        self.e = Entry(top,command=self.paste)
         self.e.pack()
         self.e.bind('<Return>', self.cleanup)
         self.b = Button(top, text='Ok', command=self.cleanup)
@@ -31,8 +33,50 @@ class popupShotWindow:
         self.e.focus_set()
         self.top.lift()
 
+    def paste(self, event=None):
+        print(event)
+
     def cleanup(self, event=None):
         self.value = int(self.e.get())
+        self.top.destroy()
+
+class popupUrlWindow:
+    def __init__(self, root):
+        top = self.top = Toplevel(root)
+
+
+        self.l = Label(top, text="Enter URL")
+        self.l.pack()
+        self.e = Entry(top,width=80)
+        self.e.pack()
+        self.e.bind('<Return>', self.cleanup)
+        self.e.bind('<Control-V>', self.popup_paste)
+        self.e.bind("<Button-3>", self.display_popup)
+        self.menu = Menu(self.e, tearoff=False)
+        self.menu.add_command(label="Copy", command=self.popup_copy)
+        self.menu.add_command(label="Cut", command=self.popup_cut)
+        self.menu.add_separator()
+        self.menu.add_command(label="Paste", command=self.popup_paste)
+        self.b = Button(top, text='Ok', command=self.cleanup)
+        self.b.pack()
+        self.e.focus_set()
+        self.top.lift()
+
+    def display_popup(self, event):
+        self.menu.post(event.x_root, event.y_root)
+
+    def popup_copy(self):
+        self.e.event_generate("<<Copy>>")
+
+    def popup_cut(self):
+        self.e.event_generate("<<Cut>>")
+
+    def popup_paste(self):
+        self.e.event_generate("<<Paste>>")
+
+
+    def cleanup(self, event=None):
+        self.value = str(self.e.get())
         self.top.destroy()
 
 
@@ -110,6 +154,7 @@ class mymenu:
         mb_func.pack(side=LEFT)
         mb_func.menu = Menu(mb_func)
         mb_func.menu.add_command(label='load image', command=self.loadimage)
+        mb_func.menu.add_command(label='load url', command=self.loadurl)
         mb_func.menu.add_command(label='load mds shot', command=self.loadshotmds,
                                  accelerator="Ctrl+d")
         mb_func.menu.add_command(label='load savefile shot', command=self.loadshotdat,
@@ -136,6 +181,7 @@ class mymenu:
         mb_bgfunc.pack(side=LEFT)
         mb_bgfunc.menu = Menu(mb_bgfunc)
         mb_bgfunc.menu.add_command(label='load image', command=self.loadbg)
+        mb_bgfunc.menu.add_command(label='load url', command=self.loadburl)
         mb_bgfunc.menu.add_command(label='load mds shot', command=self.loadbgshotmds)
         mb_bgfunc.menu.add_command(label='load savefile shot', command=self.loadbgshotdat)
         mb_bgfunc.menu.add_command(label='save image', command=self.savebg)
@@ -155,10 +201,18 @@ class mymenu:
         mb_bgfunc.menu.add_command(label='Equalize', command=self.bgequalize)
         mb_bgfunc.menu.add_command(label='FindEdges', command=self.bgedge)
 
+        mb_hfunc = Menubutton(menubar, text='Help')
+        mb_hfunc.pack(side=RIGHT)
+        mb_hfunc.menu = Menu(mb_hfunc)
+        mb_hfunc.menu.add_command(label='Help', command=self.help)
+        mb_hfunc.menu.add_separator()
+        mb_hfunc.menu.add_command(label='About', command=self.showvers)
+
         mb_file['menu'] = mb_file.menu
         mb_mask['menu'] = mb_mask.menu
         mb_func['menu'] = mb_func.menu
         mb_bgfunc['menu'] = mb_bgfunc.menu
+        mb_hfunc['menu'] = mb_hfunc.menu
 
         return
 
@@ -217,12 +271,21 @@ class mymenu:
         self.ui.load_warp_from_mdsplus(self.ui.mdswarp, shot=self.w.value)
         self.ui.refresh()
 
+    def loadurl(self, event=None):
+        self.w = popupUrlWindow(self.root)
+        self.root.wait_window(self.w.top)
+        self.ui.fimage.loadurl(url=self.w.value)
+        self.ui.refresh()
+
     def loadimage(self, event=None):
         self.ui.fimage.loadimage()
         self.ui.refresh()
 
     def showwarp(self, event=None):
         self.ui.showwarp()
+
+    def showvers(self, event=None):
+        self.ui.showvers()
 
     def resetimage(self):
         self.ui.fimage.reset()
@@ -253,6 +316,12 @@ class mymenu:
 
     def loadbg(self, event=None):
         self.ui.bgimage.loadimage()
+        self.ui.refresh()
+
+    def loadburl(self, event=None):
+        self.w = popupUrlWindow(self.root)
+        self.root.wait_window(self.w.top)
+        self.ui.bgimage.loadurl(url=self.w.value)
         self.ui.refresh()
 
     def loadbgshotmds(self, event=None):
@@ -368,8 +437,10 @@ class mymenu:
         self.ui.refresh()
 
     def quit(self, event=None):
-        if self.ui.spawned:
-            print(self.ui.xposentry.get(), self.ui.yposentry.get(),
-                  self.ui.rposentry.get(), self.ui.xstr.get())
         sys.exit()
         return
+
+    def help(self):
+        self.w = help.popupHelpWindow(self.root)
+        self.root.wait_window(self.w.top)
+

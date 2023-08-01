@@ -31,8 +31,10 @@ except:
    from tkinter import messagebox as mbox
    from tkinter import ttk
    from tkinter.filedialog import askopenfilename
+   from tkinter import simpledialog
 #
 import requests
+from urllib.parse import urlparse
 from io import BytesIO
 import argparse
 
@@ -124,6 +126,7 @@ parser.add_argument('--winx',type=int,help='pixel width of application',default=
 parser.add_argument('--winy',type=int,help='pixel height of application',default=860)
 parser.add_argument('--diag',type=str,help='Diagnostic system nickname in config file',default='None')
 parser.add_argument('--version',action='store_true',help='Print code version')
+parser.add_argument('--url',type=str,help='Url to load image from. First use is forground, second use is background',action='append')
 parser.add_argument('fgfilename',type=str,nargs='?')
 parser.add_argument('bgfilename',type=str,nargs='?')
 
@@ -311,6 +314,12 @@ class Images():
                #    (self.W, self.H), pImage.Resampling.LANCZOS)
                self.buimage = pImage.open(ifilename).convert('L')
                self.reset()
+    def loadurl(self,url=None):
+        if url == None:
+           url = simpledialog.askstring("URL Entry","Enter URL")
+        response = requests.get(url)
+        self.buimage = pImage.open(BytesIO(response.content)).convert('L')
+        self.reset()
     def framechange(self):
         if self.video and self.dirty:
            if self.vidind < 0:
@@ -679,8 +688,8 @@ class UI(Frame):
     def takestep(self,hstep,vstep):
         self.hpos=self.hpos + hstep
         self.vpos=self.vpos + vstep
-        self.xi=self.xi + hstep
-        self.yi=self.yi + vstep
+        self.xi=np.add(self.xi,hstep)
+        self.yi=np.add(self.yi,vstep)
         self.wmarks=np.transpose((self.xi, self.yi)).tolist()
 
     def takerot(self,rot):
@@ -738,6 +747,9 @@ class UI(Frame):
                       "Yi=["+s.format(*self.yi)+"]\n" +
                       "Xo=["+s.format(*self.xo)+"]\n" +
                       "Yo=["+s.format(*self.yo)+"]")
+    def showvers(self):
+        mbox.showinfo("About Pymorph",'\nPython module {0} \nversion {1}\n'.format(_dist.project_name,_dist.version))
+
 
     def savewarpyaml(self, yfilename='warp.yaml'):
         warp={}
@@ -962,11 +974,14 @@ if __name__ == "__main__":
     if comdiag == 'test' or comdiag == 'test2':
         root.title('Test diag')
     else:
-        if args.fgfilename == None:
+        if args.fgfilename == None and args.url == None:
             ifilename=askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                                ("png", "*.png"),
                                                ("allfiles", "*")])
-        else:
+        elif args.url != None:
+            a = urlparse(args.url[0])
+            ifilename = os.path.basename(a.path)
+        elif args.fgfilename != None:
             ifilename=args.fgfilename
 
         root.title(ifilename)
@@ -988,20 +1003,30 @@ if __name__ == "__main__":
         h=int(h * s)
     else: 
         if s != 1:
-            im=pImage.open(ifilename).convert('L')
+            if args.url == None:
+               im=pImage.open(ifilename).convert('L')
+            else:
+               response = requests.get(args.url[0])
+               im = pImage.open(BytesIO(response.content)).convert('L')
             w, h=im.size
             w=int(w * s)
             h=int(h * s)
-            im=Image.open(ifilename).convert('L').resize(
-                (w, h), pImage.Resampling.LANCZOS)
+            im=im.resize((w, h), pImage.Resampling.LANCZOS)
         elif w != 0:
-            im=pImage.open(ifilename).convert('L')
+            if args.url == None:
+               im=pImage.open(ifilename).convert('L')
+            else:
+               response = requests.get(args.url[0])
+               im = pImage.open(BytesIO(response.content)).convert('L')
             iw, ih=im.size
             s=float(w) / float(iw)
-            im=pImage.open(ifilename).convert('L').resize(
-                (w, h), pImage.Resampling.LANCZOS)
+            im=im.resize((w, h), pImage.Resampling.LANCZOS)
         else:
-            im=pImage.open(ifilename).convert('L')
+            if args.url == None:
+               im=pImage.open(ifilename).convert('L')
+            else:
+               response = requests.get(args.url[0])
+               im = pImage.open(BytesIO(response.content)).convert('L')
             w, h=im.size
             s=1.0
 
