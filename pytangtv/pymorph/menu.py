@@ -25,16 +25,13 @@ class popupShotWindow:
         top = self.top = Toplevel(root)
         self.l = Label(top, text="Enter shot")
         self.l.pack()
-        self.e = Entry(top,command=self.paste)
+        self.e = Entry(top)
         self.e.pack()
         self.e.bind('<Return>', self.cleanup)
         self.b = Button(top, text='Ok', command=self.cleanup)
         self.b.pack()
         self.e.focus_set()
         self.top.lift()
-
-    def paste(self, event=None):
-        print(event)
 
     def cleanup(self, event=None):
         self.value = int(self.e.get())
@@ -235,12 +232,14 @@ class mymenu:
         self.w = popupShotWindow(self.root)
         self.root.wait_window(self.w.top)
         self.ui.fimage.load_data_from_mdsplus(shot=self.w.value)
+        self.ui.updateranges()
         self.ui.refresh()
 
     def loadshotdat(self, event=None):
         sfilename = str(askopenfilename(filetypes=[("dat", "*.dat")]))
         if sfilename != None:
             self.ui.fimage.load_data_from_savefile(sfilename=sfilename)
+        self.ui.updateranges()
         self.ui.refresh()
 
 
@@ -268,17 +267,21 @@ class mymenu:
     def loadwarpmds(self, event=None):
         self.w = popupShotWindow(self.root)
         self.root.wait_window(self.w.top)
-        self.ui.load_warp_from_mdsplus(self.ui.mdswarp, shot=self.w.value)
+        print(self.w.value)
+        self.ui.load_warp_from_mdsplus(shot=self.w.value)
         self.ui.refresh()
 
     def loadurl(self, event=None):
         self.w = popupUrlWindow(self.root)
         self.root.wait_window(self.w.top)
         self.ui.fimage.loadurl(url=self.w.value)
+        self.ui.updateranges()
         self.ui.refresh()
 
     def loadimage(self, event=None):
         self.ui.fimage.loadimage()
+        self.ui.updateranges()
+        self.ui.updateranges()
         self.ui.refresh()
 
     def showwarp(self, event=None):
@@ -316,24 +319,28 @@ class mymenu:
 
     def loadbg(self, event=None):
         self.ui.bgimage.loadimage()
+        self.ui.updateranges()
         self.ui.refresh()
 
     def loadburl(self, event=None):
         self.w = popupUrlWindow(self.root)
         self.root.wait_window(self.w.top)
         self.ui.bgimage.loadurl(url=self.w.value)
+        self.ui.updateranges()
         self.ui.refresh()
 
     def loadbgshotmds(self, event=None):
         self.w = popupShotWindow(self.root)
         self.root.wait_window(self.w.top)
         self.ui.bgimage.load_data_from_mdsplus(shot=self.w.value)
+        self.ui.updateranges()
         self.ui.refresh()
 
     def loadbgshotdat(self, event=None):
         sfilename = str(askopenfilename(filetypes=[("dat", "*.dat")]))
         if sfilename != None:
             self.ui.bgimage.load_data_from_savefile(sfilename=sfilename)
+        self.ui.updateranges()
         self.ui.refresh()
 
 

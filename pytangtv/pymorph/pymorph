@@ -142,7 +142,7 @@ winx = args.winx
 winy = args.winy
 comdiag = args.diag
 if comdiag in jopts:
-    diag = jopts[optdict['--diag']]
+    diag = jopts[args.diag]
     if 'window' in diag:
         defaults = diag['window']
         if 'windowx' in defaults:
@@ -199,8 +199,14 @@ else:
 
 class Images():
     def __init__(self, im=None, s=1.0,ui=None):
-        self.imageargs = imageargs 
-        self.mdsargs = mdsargs 
+        self.imageargs = ui.imageargs 
+        self.dimageargs = ui.imageargs
+        self.mdsargs = ui.mdsargs 
+        self.savefileargs = ui.savefileargs
+        self.mdsdata = ui.mdsdata
+        self.mdswarp = ui.mdswarp
+        self.savefiledata = ui.savefiledata
+        self.savefilewarp = ui.savefilewarp
         self.buimage=im
         self.video=False
         self.viddata=None
@@ -259,39 +265,92 @@ class Images():
         self.dirty = True
 
     def load_data_from_savefile(self, sfilename,varname='viddata',savefiledata={}):
+        self.dimageargs = self.savefileargs
         self.video=True
         self.dirty=True
+        self.colmajor = True
         sf=readsav(sfilename)
-        if 'varname' in savefiledata:
-            varname=savefiledata['varname']
+        if 'varname' in self.savefiledata:
+            varname=self.savefiledata['varname']
+        if 'colmajor' in self.savefiledata:
+            self.colmajor = self.savefiledata['colmajor']
         self.viddata=sf[varname]
-        self.cmin = self.viddata.min()
-        self.cmax = self.viddata.max()
+        self.cmin = float(self.viddata.min())
+        self.cmax = float(self.viddata.max())
         self.vidind=0
-        self.vidnum=self.viddata.shape[0]
+        dims = None
+        if 'dims' in self.imageargs:
+            dims=self.imageargs['dims']
+        if 'dims' in self.savefiledata:
+            dims=self.savefiledata['dims']
+        if dims != None:
+            self.vidnum=int(self.viddata.size / (dims[0]*dims[1]))
+            if self.colmajor:
+               self.viddata=self.viddata.reshape(
+                   [self.vidnum, dims[0], dims[1]])
+            else:
+               self.viddata=self.viddata.reshape(
+                   [dims[1],dims[0],self.vidnum])
+        else:
+            if self.colmajor:
+               self.vidnum = self.viddata.shape[0]
+               self.viddata=self.viddata.reshape(
+                          self.viddata.shape[::-1])
+            else:
+               self.vidnum = self.viddata.shape[2]
+        if 'transpose' in self.mdsdata and self.mdsdata['transpose'] == 1:
+            self.transpose = True
+        if 'vflip' in self.mdsdata and self.mdsdata['vflip'] == 1:
+            self.vflip=True
+        if 'hflip' in self.mdsdata and self.mdsdata['hflip'] == 1:
+            self.hflip=True
         self.ui.dlabel.set('Frame(%d)' % (self.vidnum,))
         self.reset()
 
     def load_data_from_mdsplus(self, shot=None):
         import MDSplus as mds
-        if 'data' in self.mdsargs and 'mdsserver' in self.mdsargs['data']:
-            mdsserver=mds.Connection(self.mdsargs['data']['mdsserver'])
+        self.dimageargs = self.mdsargs
+        if 'mdsserver' in self.mdsdata:
+            self.colmajor = True
+            if 'colmajor' in self.mdsdata:
+                 self.colmajor = self.mdsdata['colmajor']
+            mdsserver=mds.Connection(self.mdsdata['mdsserver'])
             if shot != None:
-                tree=mdsserver.openTree(self.mdsargs['data']['mdstree'], shot)
-                self.viddata=np.array(mdsserver.get(self.mdsargs['data']['node']))
-                self.cmin = self.viddata.min()
-                self.cmax = self.viddata.max()
-                try:
+                tree=mdsserver.openTree(self.mdsdata['mdstree'], shot)
+                self.viddata=np.array(mdsserver.get(self.mdsdata['node']))
+                print(self.viddata.shape)
+                self.cmin = float(self.viddata.min())
+                self.cmax = float(self.viddata.max())
+                #try:
+                if True:
+                   dims = None
                    if 'dims' in self.imageargs:
-                      dims=self.imageargs['dims']
-                      self.vidnum=int(self.viddata.size / (dims[0]*dims[1]))
-                      self.viddata=self.viddata.reshape(
-                          [self.vidnum, dims[0], dims[1]])
+                       dims=self.imageargs['dims']
+                   if 'dims' in self.mdsdata:
+                       dims=self.mdsdata['dims']
+                   if 'dims' != None:
+                       self.vidnum=int(self.viddata.size / (dims[0]*dims[1]))
+                       if self.colmajor:
+                          self.viddata=self.viddata.reshape(
+                              [self.vidnum, dims[0], dims[1]])
+                       else:
+                          self.viddata=self.viddata.reshape(
+                              [dims[1],dims[0],self.vidnum])
                    else:
-                      self.viddata=self.viddata.reshape(
-                          self.viddata.shape[::-1])
-                      self.vidnum=self.viddata.shape[0]
-                except:
+                       if self.colmajor:
+                          self.vidnum = self.viddata.shape[0]
+                          self.viddata=self.viddata.reshape(
+                                     self.viddata.shape[::-1])
+                       else:
+                          self.vidnum = self.viddata.shape[2]
+                   if 'transpose' in self.mdsdata and self.mdsdata['transpose'] == 1:
+                      self.transpose = True
+                   if 'vflip' in self.mdsdata and self.mdsdata['vflip'] == 1:
+                      self.vflip=True
+                   if 'hflip' in self.mdsdata and self.mdsdata['hflip'] == 1:
+                      self.hflip=True
+                #except:
+                else:
                    print("Could not reshape array: ", self.viddata.shape)
                 self.vidind=0
                 self.video=True
@@ -303,6 +362,7 @@ class Images():
         else:
             print("No MDSPlus server")
     def loadimage(self,ifilename=None):
+        self.dimageargs = self.imageargs
         self.video=False
         if ifilename == None:
            ifilename = str(askopenfilename(filetypes=[("tiff", ".tif .tiff"),
@@ -330,46 +390,71 @@ class Images():
                self.ui.frentry.delete(0, END)
                self.ui.frentry.insert(0, "%d" % self.vidind)
                i=np.asarray(self.viddata[self.vidind, :, :],dtype=np.float32)
-               self.image=pImage.fromarray(bytescale(i, cmin=int(self.cmin),cmax=int(self.cmax)))
+               self.image=pImage.fromarray(bytescale(i, cmin=self.cmin,cmax=self.cmax))
         
     def update(self):
         self.dirty=False
         i=np.asarray(self.image, dtype=np.float32)
-        if self.transpose:
+        if self.transpose :
             i=i.T
         if self.vflip:
             i=np.flipud(i)
         if self.hflip:
             i=np.fliplr(i)
 
-        self.dimage=pImage.fromarray(bytescale(i, cmin=int(self.cmin),cmax=int(self.cmax)))
+        self.dimage=pImage.fromarray(bytescale(i, cmin=self.cmin,cmax=self.cmax))
 
     def reset(self):
         self.dimage = self.buimage
         self.image = self.buimage
         self.dirty = True
+        self.cmin = 0.0
+        self.cmax = 255.0
         if self.video:
             self.framechange()
-        if 'transpose' in imageargs and imageargs['transpose'] == 1:
+            self.cmin = self.viddata.min()
+            self.cmax = self.viddata.max()
+        if 'transpose' in self.dimageargs and self.dimageargs['transpose'] == 1:
              self.transpose = True
         else:
              self.transpose = False
-        if 'vflip' in imageargs and imageargs['vflip'] == 1:
+        if 'vflip' in self.dimageargs and self.dimageargs['vflip'] == 1:
              self.vflip = True
         else:
              self.vflip = False
-        if 'hflip' in imageargs and imageargs['hflip'] == 1:
+        if 'hflip' in self.dimageargs and self.dimageargs['hflip'] == 1:
              self.hflip = True
         else:
              self.hflip = False
-        self.cmin = 0
-        self.cmax = 255
 
 class UI(Frame):
 
-    def __init__(self, master, im, s=1.0, winx=800, winy=600):
+    def __init__(self, master, im, s=1.0, winx=800, winy=600,imageargs={},mdsargs={},savefileargs={}):
         self.winx=winx
         self.winy=winy
+        self.imageargs = imageargs
+        self.mdsargs = mdsargs
+        self.savefileargs = savefileargs
+        self.mdsdata = {}
+        self.mdswarp = {}
+        self.savefiledata = {}
+        self.savefilewarp = {}
+        if 'data' in mdsargs:
+            self.mdsdata=mdsargs['data']
+        else:
+            self.mdsdata={}
+        if 'warp' in mdsargs:
+            self.mdswarp=mdsargs['warp']
+        else:
+            self.mdswarp={}
+        if 'data' in savefileargs:
+            self.savefiledata=savefileargs['data']
+        else:
+            self.savefiledata={}
+        if 'warp' in savefileargs:
+            self.savefilewarp=savefileargs['warp']
+        else:
+            self.savefilewarp={}
         Frame.__init__(self, master, width=self.winx, height=self.winy)
         self.pack(side=RIGHT, fill=BOTH, expand=TRUE)
         self.window=master
@@ -434,57 +519,53 @@ class UI(Frame):
         self.yi=[]
         self.xo=[]
         self.yo=[]
-        self.mdswarp={}
-        self.mdsdata={}
-        self.savefiledata={}
-        self.savefilewarp={}
         self.realdirty = True     
 
 
     def load_warp_from_mdsplus(self, shot=None):
         import MDSplus as mds
-        if 'mdsserver' in self.mdsargs:
-            mdsserver=mds.Connection(self.mdsargs['mdsserver'])
+        if 'mdsserver' in self.mdswarp:
+            mdsserver=mds.Connection(self.mdswarp['mdsserver'])
             if shot != None:
-                tree=mdsserver.openTree(self.mdsargs['mdstree'], shot)
-                self.xi=mdsserver.get(self.mdsargs['Xi']) * self.imscale
-                self.xo=mdsserver.get(self.mdsargs['Xo']) * self.imscale
-                self.yi=mdsserver.get(self.mdsargs['Yi']) * self.imscale
-                self.yo=mdsserver.get(self.mdsargs['Yo']) * self.imscale
-                if 'vflip' in self.mdsargs and self.mdsargs['vflip'] == 1:
+                tree=mdsserver.openTree(self.mdswarp['mdstree'], shot)
+                self.xi=mdsserver.get(self.mdswarp['Xi']) * self.imscale
+                self.xo=mdsserver.get(self.mdswarp['Xo']) * self.imscale
+                self.yi=mdsserver.get(self.mdswarp['Yi']) * self.imscale
+                self.yo=mdsserver.get(self.mdswarp['Yo']) * self.imscale
+                if 'vflip' in self.mdswarp and self.mdswarp['vflip'] == 1:
                     self.yi=h - 1 - self.yi
                     self.yo=h - 1 - self.yo
-                if 'hflip' in self.mdsargs and self.mdsargs['vflip'] == 1:
+                if 'hflip' in self.mdswarp and self.mdswarp['hflip'] == 1:
                     self.xi=w - 1 - self.xi
                     self.xo=w - 1 - self.xo
                 self.wmarks=np.transpose((self.xi, self.yi)).tolist()
                 self.bmarks=np.transpose((self.xo, self.yo)).tolist()
-                if 'xshift' in self.mdsargs:
-                    xshift=mdsserver.get(self.mdsargs['xshift'])
-                if 'yshift' in self.mdsargs:
-                    yshift=mdsserver.get(self.mdsargs['yshift'])
-                if 'rotation' in self.mdsargs:
-                    rshift=mdsserver.get(self.mdsargs['rotation'])
-                if 'degree' in self.mdsargs:
-                    self.degree=mdsserver.get(self.mdsargs['degree'])
+                if 'xshift' in self.mdswarp:
+                    xshift=mdsserver.get(self.mdswarp['xshift'])
+                if 'yshift' in self.mdswarp:
+                    yshift=mdsserver.get(self.mdswarp['yshift'])
+                if 'rotation' in self.mdswarp:
+                    rshift=mdsserver.get(self.mdswarp['rotation'])
+                if 'degree' in self.mdswarp:
+                    self.degree=mdsserver.get(self.mdswarp['degree'])
                     degree.set(self.degree)
-                if 'rendering' in self.mdsargs:
-                    i=np.array(mdsserver.get(self.mdsargs['rendering']))
+                if 'rendering' in self.mdswarp:
+                    i=np.array(mdsserver.get(self.mdswarp['rendering']))
                     #self.fimage=Images(pImage.fromarray(
                     #    bytescale(i)).resize((self.fimage.W, self.fimage.H)),ui=self)
                     self.fimage=Images(pImage.fromarray(
                         bytescale(i)),ui=self)
-                    if 'transpose' in self.mdsargs:
+                    if 'transpose' in self.mdswarp and self.mdswarp['transpose'] == 1:
                         self.fimage.transpose = True
-                    if 'vflip' in self.mdsargs and self.mdsargs['vflip'] == 1:
+                    if 'vflip' in self.mdswarp and self.mdswarp['vflip'] == 1:
                         self.fimage.vflip=True
-                    if 'hflip' in self.mdsargs and self.mdsargs['hflip'] == 1:
+                    if 'hflip' in self.mdswarp and self.mdswarp['hflip'] == 1:
                         self.fimage.hflip=True
                     self.fimage.update()
                     #self.fimage=pImage.fromarray(
                     #    bytescale(self.fimage.dimage)).resize((self.fimage.W, self.fimage.H))
-                    self.fimage=pImage.fromarray(
-                        bytescale(self.fimage.dimage))
+                    #self.fimage=pImage.fromarray(
+                    #    bytescale(self.fimage.dimage))
             else:
                 print("No shot specified")
             mdsserver.disconnect()
@@ -757,6 +838,8 @@ class UI(Frame):
         warp['creation_date']=time.ctime()
         if comment != None:
             warp['diagnostic']=comment
+        warp['type']=self.warptype
+        warp['pymorphversion']=_version
         warp['xi']=self.xi.tolist()
         warp['yi']=self.yi.tolist()
         warp['xo']=self.xo.tolist()
@@ -765,7 +848,6 @@ class UI(Frame):
         warp['yshift']=0
         warp['rotation']=0
         warp['degree']=self.degree
-        warp['type']=self.warptype
         warp['direction']=self.warpdirection
         # with open(yfilename, 'w') as outfile:
         #    yaml.dump(warp, outfile, indent=8)
@@ -785,6 +867,8 @@ class UI(Frame):
         warp['creation_date']=time.ctime()
         if comment != None:
             warp['diagnostic']=comment
+        warp['type']=self.warptype
+        warp['pymorphversion']=_version
         warp['xi']=self.xi.tolist()
         warp['yi']=self.yi.tolist()
         warp['xo']=self.xo.tolist()
@@ -793,7 +877,6 @@ class UI(Frame):
         warp['yshift']=0
         warp['rotation']=0
         warp['degree']=self.degree
-        warp['type']=self.warptype
         warp['direction']=self.warpdirection
         with open(jfilename, 'w') as outfile:
             json.dump(warp, outfile, indent=8)
@@ -824,7 +907,7 @@ class UI(Frame):
         if 'type' in warp:
             self.warptype=warp['type']
         else:
-            self.warpversion=0
+            self.warptype=1
         self.refresh()
 
 
@@ -853,7 +936,7 @@ class UI(Frame):
         if 'type' in warp:
             self.warptype=warp['type']
         else:
-            self.warpversion=0
+            self.warptype=1
         self.refresh()
 
     def morphit(self):
@@ -873,11 +956,21 @@ class UI(Frame):
     def refreshcb(self, val):
         self.refresh()
 
+    def updateranges(self):
+        self.bminentry.delete(0, END)
+        self.bminentry.insert(0,str(self.fimage.cmin))
+        self.bmaxentry.delete(0, END)
+        self.bmaxentry.insert(0,str(self.fimage.cmax))
+        self.cminentry.delete(0, END)
+        self.cminentry.insert(0,str(self.bgimage.cmin))
+        self.cmaxentry.delete(0, END)
+        self.cmaxentry.insert(0,str(self.bgimage.cmax))
+
     def refresh(self):
-        self.fimage.cmin = int(self.bminentry.get())
-        self.fimage.cmax = int(self.bmaxentry.get())
-        self.bgimage.cmin = int(self.cminentry.get())
-        self.bgimage.cmax = int(self.cmaxentry.get())
+        self.fimage.cmin = float(self.bminentry.get())
+        self.fimage.cmax = float(self.bmaxentry.get())
+        self.bgimage.cmin = float(self.cminentry.get())
+        self.bgimage.cmax = float(self.cmaxentry.get())
         self.fimage.update()
         self.bgimage.update()
         xoff=0
@@ -1032,7 +1125,7 @@ if __name__ == "__main__":
 
     frame=Frame(root)
     frame.pack(expand=FALSE, fill=BOTH)
-    ui=UI(frame, im, s, winx=winx, winy=winy)
+    ui=UI(frame, im, s, winx=winx, winy=winy,imageargs=imageargs,mdsargs=mdsargs,savefileargs=savefileargs)
     mymenu.addui(ui)
     if comdiag == 'test':
         burl = 'https://github.com/llnl-fesp/PyTangtv/raw/main/testfiles/bg.tiff'
@@ -1149,14 +1242,6 @@ if __name__ == "__main__":
     ui.cminentry.insert(0, "0")
     ui.cmaxentry.delete(0, END)
     ui.cmaxentry.insert(0, "255")
-    if 'data' in mdsargs:
-        ui.mdsdata=mdsargs['data']
-    if 'warp' in mdsargs:
-        ui.mdswarp=mdsargs['warp']
-    if 'data' in savefileargs:
-        ui.savefiledata=savefileargs['data']
-    if 'warp' in savefileargs:
-        ui.savefilewarp=savefileargs['warp']
 
 
     ui.refresh()
