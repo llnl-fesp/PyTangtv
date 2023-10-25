@@ -118,6 +118,12 @@ class mymenu:
         mb_file.menu.add_separator()
         mb_file.menu.add_command(label='quit', command=self.quit,
                                  accelerator="Ctrl+q")
+
+        mb_edit = Menubutton(menubar, text='Edit')
+        mb_edit.pack(side=LEFT)
+        mb_edit.menu = Menu(mb_edit)
+        mb_edit.menu.add_command(label='undo pt',command=self.undolast,accelerator="Ctrl-z")
+
         mb_mask = Menubutton(menubar, text='Layers')
         mb_mask.pack(side=LEFT)
         self.v = IntVar()
@@ -206,6 +212,7 @@ class mymenu:
         mb_hfunc.menu.add_command(label='About', command=self.showvers)
 
         mb_file['menu'] = mb_file.menu
+        mb_edit['menu'] = mb_edit.menu
         mb_mask['menu'] = mb_mask.menu
         mb_func['menu'] = mb_func.menu
         mb_bgfunc['menu'] = mb_bgfunc.menu
@@ -296,6 +303,10 @@ class mymenu:
 
     def resetbg(self):
         self.ui.bgimage.reset()
+        self.ui.refresh()
+
+    def undolast(self):
+        self.ui.undolast()
         self.ui.refresh()
 
     def saveimage(self, event=None):
@@ -428,7 +439,6 @@ class mymenu:
 
     def bl(self):
         self.ui.bl = self.v.get()
-        self.ui.bdirty = True
         self.ui.refresh()
 
     def bgmed3(self):

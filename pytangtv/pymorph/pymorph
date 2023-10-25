@@ -216,6 +216,7 @@ class Images():
         self.xS=s
         self.yS=s
         self.ui = ui
+        self.dirty = True
         self.reset()
 
     def sharp(self):
@@ -267,7 +268,6 @@ class Images():
     def load_data_from_savefile(self, sfilename,varname='viddata',savefiledata={}):
         self.dimageargs = self.savefileargs
         self.video=True
-        self.dirty=True
         self.colmajor = True
         sf=readsav(sfilename)
         if 'varname' in self.savefiledata:
@@ -309,6 +309,7 @@ class Images():
 
     def load_data_from_mdsplus(self, shot=None):
         import MDSplus as mds
+        self.video=True
         self.dimageargs = self.mdsargs
         if 'mdsserver' in self.mdsdata:
             self.colmajor = True
@@ -381,7 +382,7 @@ class Images():
         self.buimage = pImage.open(BytesIO(response.content)).convert('L')
         self.reset()
     def framechange(self):
-        if self.video and self.dirty:
+        if self.video:
            if self.vidind < 0:
                self.vidind=0
            elif self.vidind >= self.vidnum:
@@ -391,18 +392,20 @@ class Images():
                self.ui.frentry.insert(0, "%d" % self.vidind)
                i=np.asarray(self.viddata[self.vidind, :, :],dtype=np.float32)
                self.image=pImage.fromarray(bytescale(i, cmin=self.cmin,cmax=self.cmax))
+           self.dirty=True
+        self.update() 
         
     def update(self):
-        self.dirty=False
-        i=np.asarray(self.image, dtype=np.float32)
-        if self.transpose :
-            i=i.T
-        if self.vflip:
-            i=np.flipud(i)
-        if self.hflip:
-            i=np.fliplr(i)
-
-        self.dimage=pImage.fromarray(bytescale(i, cmin=self.cmin,cmax=self.cmax))
+        if self.dirty: 
+           i=np.asarray(self.image, dtype=np.float32)
+           if self.transpose :
+               i=i.T
+           if self.vflip:
+               i=np.flipud(i)
+           if self.hflip:
+               i=np.fliplr(i)
+           self.dirty = False
+           self.dimage=pImage.fromarray(bytescale(i, cmin=self.cmin,cmax=self.cmax))
 
     def reset(self):
         self.dimage = self.buimage
@@ -519,7 +522,7 @@ class UI(Frame):
         self.yi=[]
         self.xo=[]
         self.yo=[]
-        self.realdirty = True     
+        self.dirty = True
 
 
     def load_warp_from_mdsplus(self, shot=None):
@@ -528,6 +531,7 @@ class UI(Frame):
             mdsserver=mds.Connection(self.mdswarp['mdsserver'])
             if shot != None:
                 tree=mdsserver.openTree(self.mdswarp['mdstree'], shot)
+                self.dirty = True
                 self.xi=mdsserver.get(self.mdswarp['Xi']) * self.imscale
                 self.xo=mdsserver.get(self.mdswarp['Xo']) * self.imscale
                 self.yi=mdsserver.get(self.mdswarp['Yi']) * self.imscale
@@ -569,10 +573,11 @@ class UI(Frame):
             else:
                 print("No shot specified")
             mdsserver.disconnect()
+            self.dirty = True
+            self.refreshpoly()
             self.refresh()
         else:
             print("No MDSPlus server")
-        self.realdirty = True     
 
     def mouse_wheel(self, event):
         if event.state == 4:  # control key down
@@ -586,9 +591,15 @@ class UI(Frame):
            self.bgimage.vidind=self.bgimage.vidind + event.delta
 
         self.fimage.update()
-        self.bgimage.update()
+        self.bgimage.update() 
 
-    def range_update(self,event):
+    def frange_update(self,event):
+        self.fimage.dirty = True
+        self.dirty = True
+        self.refresh()
+    def brange_update(self,event):
+        self.bgimage.dirty = True
+        self.dirty = True
         self.refresh()
 
     def frame_update(self, event):
@@ -596,6 +607,7 @@ class UI(Frame):
         self.bgimage.vidind=int(self.frentry.get())
         self.fimage.dirty = True
         self.bgimage.dirty = True
+        self.dirty = True
         self.fimage.framechange()
         self.update()
 
@@ -604,6 +616,7 @@ class UI(Frame):
         self.bgimage.vidind=self.bgimage.vidind+1
         self.fimage.dirty = True
         self.bgimage.dirty = True
+        self.dirty = True
         self.fimage.framechange()
         self.bgimage.framechange()
         self.update()
@@ -613,6 +626,7 @@ class UI(Frame):
         self.bgimage.vidind=self.bgimage.vidind-1
         self.fimage.dirty = True
         self.bgimage.dirty = True
+        self.dirty = True
         self.fimage.framechange()
         self.bgimage.framechange()
         self.update()
@@ -642,13 +656,13 @@ class UI(Frame):
     def selmode(self):
         global mode
         self.mode=int(mode.get())
-        self.realdirty = True     
+        self.dirty = True
         self.refresh()
 
     def seldirection(self):
         global direction
         self.warpdirection=int(direction.get())
-        self.realdirty = True     
+        self.dirty = True
         self.refresh()
 
     def seldeg(self):
@@ -658,13 +672,14 @@ class UI(Frame):
             self.morphbut.config(relief="sunken", image=add)
         elif morph:
             self.morphbut.config(relief="sunken", image=on)
-        self.realdirty = True     
+        self.dirty = True
+        self.refreshpoly()
         self.refresh()
 
     def relpick(self, event):
         cx=self.mapx(event)
         cy=self.mapy(event)
-        self.realdirty = True     
+        self.dirty = True
         self.degree=int(degree.get())
         if self.mode == 1:  # add
             self.bmarks.append([cx, cy])
@@ -679,8 +694,7 @@ class UI(Frame):
             self.yi=np.array(self.wmarks)[:, 1]
             self.xo=np.array(self.bmarks)[:, 0]
             self.yo=np.array(self.bmarks)[:, 1]
-
-        self.realdirty = True     
+        self.refreshpoly()
         self.refresh()
 
     def scrollx(self, event, step, what=None):
@@ -696,7 +710,8 @@ class UI(Frame):
             self.canvas.yview(event, step, what)
 
     def motion(self, event):
-        self.realdirty = True     
+        self.fimage.dirty = True
+        self.bgimage.dirty = True
         if self.line != None:
             self.canvas.delete(self.line)
         self.x2=self.mapx(event)
@@ -705,20 +720,16 @@ class UI(Frame):
             self.x1, self.y1, self.x2, self.y2, fill='white')
 
     def mark(self, event):
-        self.realdirty = True     
+        self.dirty = True
         self.line=None
         cx=self.mapx(event)
         cy=self.mapy(event)
-        self.realdirty = True     
         if len(self.bmarks) >= (self.degree+1)**2:
             self.xi=np.array(self.wmarks)[:, 0]
             self.yi=np.array(self.wmarks)[:, 1]
             self.xo=np.array(self.bmarks)[:, 0]
             self.yo=np.array(self.bmarks)[:, 1]
-            self.kx, self.ky=mi.polywarp(
-                self.xi, self.yi, self.xo, self.yo, degree=self.degree)
-            self.rkx, self.rky=mi.polywarp(
-                self.xo, self.yo, self.xi, self.yi, degree=self.degree)
+            self.refreshpoly()
         if morph and self.warpdirection == 1 and len(self.bmarks) >= (self.degree+1)**2:
             cx, cy=mi.poly_pt(cx, cy, self.kx, self.ky)
         if morph and self.warpdirection == 2 and len(self.bmarks) >= (self.degree+1)**2:
@@ -745,7 +756,7 @@ class UI(Frame):
         self.refresh()
 
     def remmark(self, event):
-        self.realdirty = True     
+        self.dirty = True
         self.wmarks=[]
         self.bmarks=[]
         self.kx=[]
@@ -758,8 +769,19 @@ class UI(Frame):
         self.yo=[]
         self.refresh()
 
+    def undolast(self):
+        self.xi = self.xi[0:-1]
+        self.yi = self.yi[0:-1]
+        self.xo = self.xo[0:-1]
+        self.yo = self.yo[0:-1]
+        self.wmarks=np.transpose((self.xi, self.yi)).tolist()
+        self.bmarks=np.transpose((self.xo, self.yo)).tolist()
+        self.dirty = True
+        self.refreshpoly()
+        self.refresh()
+
     def reset(self):
-        self.realdirty = True     
+        self.dirty = True
         self.takestep(-self.hpos,-self.vpos)
         self.takerot(-self.rot)
         self.fimage.reset()
@@ -772,6 +794,7 @@ class UI(Frame):
         self.xi=np.add(self.xi,hstep)
         self.yi=np.add(self.yi,vstep)
         self.wmarks=np.transpose((self.xi, self.yi)).tolist()
+        
 
     def takerot(self,rot):
         self.rot=self.rot + rot
@@ -785,39 +808,45 @@ class UI(Frame):
         self.wmarks=np.transpose((self.xi, self.yi)).tolist()
 
     def rightstep(self):
-        self.realdirty = True     
+        self.dirty = True
         self.hstep=int(self.xstepentry.get())
         self.takestep(self.hstep,0)
+        self.refreshpoly()
         self.refresh()
 
     def leftstep(self):
-        self.realdirty = True     
+        self.dirty = True
         self.hstep=int(self.xstepentry.get())
         self.takestep(-self.hstep,0)
+        self.refreshpoly()
         self.refresh()
 
     def downstep(self):
-        self.realdirty = True     
+        self.dirty = True
         self.vstep=int(self.ystepentry.get())
         self.takestep(0,self.vstep)
+        self.refreshpoly()
         self.refresh()
 
     def upstep(self):
-        self.realdirty = True     
+        self.dirty = True
         self.vstep=int(self.ystepentry.get())
         self.takestep(0,-self.vstep)
+        self.refreshpoly()
         self.refresh()
 
     def rotr(self):
-        self.realdirty = True     
+        self.dirty = True
         self.rstep=float(self.rstepentry.get())
         self.takerot(self.rstep)
+        self.refreshpoly()
         self.refresh()
 
     def rotl(self):
-        self.realdirty = True     
+        self.dirty = True
         self.rstep=float(self.rstepentry.get())
         self.takerot(-self.rstep)
+        self.refreshpoly()
         self.refresh()
 
     def showwarp(self):
@@ -882,7 +911,7 @@ class UI(Frame):
             json.dump(warp, outfile, indent=8)
 
     def loadwarpyaml(self, yfilename='warp.yaml'):
-        self.realdirty = True     
+        self.dirty = True
         with open(yfilename, 'r') as infile:
             warp=yaml.safe_load(infile)
         self.xi=np.array(warp['xi'])
@@ -896,18 +925,14 @@ class UI(Frame):
         self.wmarks=np.transpose((self.xi, self.yi)).tolist()
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         if 'direction' in warp:
-            if warp['direction'] == 'forward':
-                self.warpdirection=1
-            elif warp['direction'] == 'reverse':
-                self.warpdirection=2
-            else:
-                self.warpdirection=0
+            self.warpdirection=warp['direction']
         else:
-            self.warpdirection=0
+            self.warpdirection=1
         if 'type' in warp:
             self.warptype=warp['type']
         else:
             self.warptype=1
+        self.refreshpoly()
         self.refresh()
 
 
@@ -925,24 +950,20 @@ class UI(Frame):
         self.wmarks=np.transpose((self.xi, self.yi)).tolist()
         self.bmarks=np.transpose((self.xo, self.yo)).tolist()
         if 'direction' in warp:
-            if warp['direction'] == 'forward':
-                self.warpdirection=1
-            elif warp['direction'] == 'reverse':
-                self.warpdirection=2
-            else:
-                self.warpdirection=0
+            self.warpdirection=warp['direction']
         else:
-            self.warpdirection=0
+            self.warpdirection=1
         if 'type' in warp:
             self.warptype=warp['type']
         else:
             self.warptype=1
+        self.refreshpoly()
         self.refresh()
 
     def morphit(self):
         global morph
-        self.realdirty = True     
-        if self.morphbut.config('relief')[-1] == 'sunken':
+        self.dirty = True
+        if morph:
             self.morphbut.config(relief="raised", image=off)
             morph=False
         else:
@@ -966,6 +987,13 @@ class UI(Frame):
         self.cmaxentry.delete(0, END)
         self.cmaxentry.insert(0,str(self.bgimage.cmax))
 
+    def refreshpoly(self):
+        if len(self.bmarks) >= (self.degree+1)**2:
+            self.kx, self.ky=mi.polywarp(
+               self.xi, self.yi, self.xo, self.yo, degree=self.degree)
+            self.rkx, self.rky=mi.polywarp(
+               self.xo, self.yo, self.xi, self.yi, degree=self.degree)
+
     def refresh(self):
         self.fimage.cmin = float(self.bminentry.get())
         self.fimage.cmax = float(self.bmaxentry.get())
@@ -981,13 +1009,10 @@ class UI(Frame):
         if morph and self.warpdirection == 1:
             if len(self.bmarks) >= (self.degree+1)**2:
                 self.morphbut.config(relief="sunken", image=on)
-                if self.realdirty:
-                    self.kx, self.ky=mi.polywarp(
-                        self.xi, self.yi, self.xo, self.yo, degree=self.degree)
-                    self.realdirty=False
-                self.mimage=pImage.fromarray(mi.poly_2d(
+                if self.dirty:
+                    self.fimage.mimage=pImage.fromarray(mi.poly_2d(
                         np.asarray(im1), self.kx, self.ky)).convert('L')
-                im1=self.mimage
+                im1=self.fimage.mimage
             else:
                 self.morphbut.config(relief="sunken", image=add)
 
@@ -1003,13 +1028,10 @@ class UI(Frame):
             if morph and self.warpdirection == 2:
                 if len(self.bmarks) >= (self.degree+1)**2:
                     self.morphbut.config(relief="sunken", image=on)
-                    if self.realdirty:
-                        self.kx, self.ky=mi.polywarp(
-                            self.xi, self.yi, self.xo, self.yo, degree=self.degree)
-                        self.realdirty=False
-                    self.mimage=pImage.fromarray(mi.poly_2d(
+                    if self.dirty:
+                        self.bgimage.mimage=pImage.fromarray(mi.poly_2d(
                             np.asarray(im2), self.kx, self.ky)).convert('L')
-                    im2=self.mimage
+                    im2=self.bgimage.mimage
                 else:
                     self.morphbut.config(relief="sunken", image=add)
             self.im2=im2
@@ -1050,6 +1072,7 @@ class UI(Frame):
             for m in self.bmarks:
                 self.canvas.create_oval(
                     m[0]-3, m[1]-3, m[0]+3, m[1]+3, outline="blue", fill='blue')
+        self.dirty=False
 
 #
 # script interface
@@ -1208,9 +1231,9 @@ if __name__ == "__main__":
     Label(frame2, text='Image range').pack(side=LEFT)
     ui.bminentry=Entry(frame2, width=10)
     ui.bminentry.pack(side=LEFT, padx=2, pady=2)
-    ui.bminentry.bind('<Key-Return>', ui.range_update)
+    ui.bminentry.bind('<Key-Return>', ui.frange_update)
     ui.bmaxentry=Entry(frame2, width=10)
-    ui.bmaxentry.bind('<Key-Return>', ui.range_update)
+    ui.bmaxentry.bind('<Key-Return>', ui.frange_update)
     ui.bmaxentry.pack(side=LEFT, padx=2, pady=2)
     ui.bminentry.delete(0, END)
     ui.bminentry.insert(0, "0")
@@ -1234,9 +1257,9 @@ if __name__ == "__main__":
     Label(frame2, text='BGImage range').pack(side=LEFT)
     ui.cminentry=Entry(frame2, width=10)
     ui.cminentry.pack(side=LEFT, padx=2, pady=2)
-    ui.cminentry.bind('<Key-Return>', ui.range_update)
+    ui.cminentry.bind('<Key-Return>', ui.brange_update)
     ui.cmaxentry=Entry(frame2, width=10)
-    ui.cmaxentry.bind('<Key-Return>', ui.range_update)
+    ui.cmaxentry.bind('<Key-Return>', ui.brange_update)
     ui.cmaxentry.pack(side=LEFT, padx=2, pady=2)
     ui.cminentry.delete(0, END)
     ui.cminentry.insert(0, "0")
