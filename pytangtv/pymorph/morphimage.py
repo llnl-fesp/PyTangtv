@@ -78,6 +78,20 @@ def poly_pt(xpt,ypt,kx,ky):
 
     return xi,yi
 
+def poly_pts(xpts,ypts,kx,ky):
+    degree = len(kx)-1
+
+    npts=len(xpts)
+    xi = np.zeros(npts)
+    yi = np.zeros(npts)
+
+    for k in range(npts):
+       for i in np.arange(degree+1):
+           for j in np.arange(degree+1):
+               xi[k] = xi[k] + kx[j, i]*(xpts[k]**j)*(ypts[k]**i)
+               yi[k] = yi[k] + ky[j, i]*(xpts[k]**j)*(ypts[k]**i)
+
+    return xi,yi
 
 
 
