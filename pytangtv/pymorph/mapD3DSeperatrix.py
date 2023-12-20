@@ -11,7 +11,6 @@ c_float_p = ct.POINTER(ct.c_float)
 c_int_p = ct.POINTER(ct.c_int)
 
 shlib = ct.CDLL('/usr/local/diags/tangtv/lib/idlbracket.so')
-shlib = ct.CDLL('./idlbracket.so')
 shlib.bracket_list.restype = ct.c_int
 shlib.bracket_list.argtypes = [
         c_float_p,c_float_p,ct.c_int,c_float_p,c_float_p,
@@ -35,7 +34,7 @@ def bracket_list(r0,z0,ri,zi):
         return (xind[0:2*numpts],yind[0:2*numpts])
 
 
-def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01'):
+def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01',server=None,tree=None):
 
 
 
@@ -49,36 +48,56 @@ def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01'):
 
 
 
-   s = mds.Connection('atlas.gat.com')
-   efit01 = s.openTree(runid,shot)
+   if server == None:
+      s = mds.Connection('atlas.gat.com')
+   else:
+      s = server
+
+   if tree == None:
+      efit01 = s.openTree(runid,shot)
+
    atime = s.get('\ATIME')
    zmaxis = s.get('\ZMAXIS')*100
    rmidin = s.get('\RMIDIN')*100
    rmidout = s.get('\RMIDOUT')*100
    bdry = s.get('\BDRY').value*100
-   rxpt1 = s.get('\RXPT2')*100
-   zxpt1 = s.get('\ZXPT2')*100
+   rxpt1 = s.get('\RXPT1')*100
+   zxpt1 = s.get('\ZXPT1')*100
+   rxpt2 = s.get('\RXPT2')*100
+   zxpt2 = s.get('\ZXPT2')*100
    rvsin = s.get('\RVSIN')*100
    zvsin = s.get('\ZVSIN')*100
    rvsout = s.get('\RVSOUT')*100
    zvsout = s.get('\ZVSOUT')*100
 
+   if tree == None:
+      s.closeTree(runid,shot)
 
    i = np.where(atime > time)
    j = i[0][0]
 
    rpts = [float(rmidin[j]),float(rmidout[j])]
    zpts = [float(zmaxis[j]),float(zmaxis[j])]
+   xmid,ymid = bracket_list(rpts,zpts,ri,zi)
+
+   xbdry,ybdry = bracket_list(bdry[i,0][0],bdry[i,1][0],ri,zi)
    bdry = bdry[j]
    i = np.where(bdry[:,0] > 0)
    xbdry,ybdry = bracket_list(bdry[i,0][0],bdry[i,1][0],ri,zi)
 
-   inrleg = [float(rxpt1[j]),float(rvsin[j])]
-   inzleg = [float(zxpt1[j]),float(zvsin[j])]
+   if rxpt1[j] > 0 and zvsin[j] < 0:
+      rxpt = rxpt1
+      zxpt = zxpt1
+   elif rxpt2[j] > 0 and zvsin[j] > 0:
+      rxpt = rxpt2
+      zxpt = zxpt2
+
+   inrleg = [float(rxpt[j]),float(rvsin[j])]
+   inzleg = [float(zxpt[j]),float(zvsin[j])]
    xinleg,yinleg = bracket_list(inrleg,inzleg,ri,zi)
 
-   outrleg = [float(rxpt1[j]),float(rvsout[j])]
-   outzleg = [float(zxpt1[j]),float(zvsout[j])]
+   outrleg = [float(rxpt[j]),float(rvsout[j])]
+   outzleg = [float(zxpt[j]),float(zvsout[j])]
    xoutleg,youtleg = bracket_list(outrleg,outzleg,ri,zi)
 
    if warp != None:
@@ -88,6 +107,7 @@ def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01'):
       wxbdry,wybdry = mi.poly_pts(xbdry,ybdry,kx,ky)
       wxinleg,wyinleg = mi.poly_pts(xinleg,yinleg,kx,ky)
       wxoutleg,wyoutleg = mi.poly_pts(xoutleg,youtleg,kx,ky)
-      return wxbdry,wybdry,wxinleg,wyinleg,wxoutleg,wyoutleg
+      wxmid,wymid = mi.poly_pts(xmid,ymid,kx,ky)
+      return wxbdry,wybdry,wxinleg,wyinleg,wxoutleg,wyoutleg,wxmid,wymid
    else:
-      return xbdry,ybdry,xinleg,yinleg,xoutleg,youtleg
+      return xbdry,ybdry,xinleg,yinleg,xoutleg,youtleg,xmid,ymid
