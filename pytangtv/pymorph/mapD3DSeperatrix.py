@@ -34,19 +34,18 @@ def bracket_list(r0,z0,ri,zi):
         return (xind[0:2*numpts],yind[0:2*numpts])
 
 
-def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01',server=None,tree=None):
+def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01',server=None,tree=None,vflip=False,hflip=False):
 
 
 
    geom = readsav(geom)['geom']
 
    rendered=geom['rendered'][0]
+   imylen,imxlen = rendered.shape 
    wf=geom['wireframe'][0]
    ri=geom['rimpact'][0]
    zi=geom['zimpact'][0]
    phii=geom['phiimpact'][0]
-
-
 
    if server == None:
       s = mds.Connection('atlas.gat.com')
@@ -103,7 +102,18 @@ def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01',server=None,tree=No
    if warp != None:
       with open(warp,'r') as f:
           warp = json.load(f)
-      kx,ky = mi.polywarp(warp['xo'],warp['yo'],warp['xi'],warp['yi'],warp['degree'])
+      xo = warp['xo']
+      yo = warp['yo']
+      xi = warp['xi']
+      yi = warp['yi']
+      if not vflip:
+         for i in range(len(yi)):
+            yi[i] = imylen - yi[i] - 1
+      if hflip:
+         for i in range(len(xi)):
+            xi[i] = imxlen - xi[i] - 1
+           
+      kx,ky = mi.polywarp(xo,yo,xi,yi,warp['degree'])
       wxbdry,wybdry = mi.poly_pts(xbdry,ybdry,kx,ky)
       wxinleg,wyinleg = mi.poly_pts(xinleg,yinleg,kx,ky)
       wxoutleg,wyoutleg = mi.poly_pts(xoutleg,youtleg,kx,ky)
