@@ -31,7 +31,8 @@ def bracket_list(r0,z0,ri,zi):
                            zi.astype(np.float32).ctypes.data_as(c_float_p),
                            ct.c_int(xlen),ct.c_int(ylen),
                            ct.cast(xind,c_int_p),ct.cast(yind,c_int_p))
-        return (xind[0:2*numpts],yind[0:2*numpts])
+        ongrid = np.array(xind[0:2*numpts])>=0
+        return (xind[ongrid],yind[ongrid])
 
 
 def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01',server=None,tree=None,vflip=False,hflip=False):
@@ -121,3 +122,34 @@ def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01',server=None,tree=No
       return wxbdry,wybdry,wxinleg,wyinleg,wxoutleg,wyoutleg,wxmid,wymid
    else:
       return xbdry,ybdry,xinleg,yinleg,xoutleg,youtleg,xmid,ymid
+
+
+
+def mapSurface(r0,z0,geom,warp=None,vflip=False,hflip=False):
+   geom = readsav(geom)['geom']
+   rendered=geom['rendered'][0]
+   imylen,imxlen = rendered.shape 
+   ri=geom['rimpact'][0]
+   zi=geom['zimpact'][0]
+
+   xsurf,ysurf = bracket_list(r0,z0,ri,zi)
+
+   if warp != None:
+      with open(warp,'r') as f:
+          warp = json.load(f)
+      xo = warp['xo']
+      yo = warp['yo']
+      xi = warp['xi']
+      yi = warp['yi']
+      if not vflip:
+         for i in range(len(yi)):
+            yi[i] = imylen - yi[i] - 1
+      if hflip:
+         for i in range(len(xi)):
+            xi[i] = imxlen - xi[i] - 1
+           
+      kx,ky = mi.polywarp(xo,yo,xi,yi,warp['degree'])
+      wxsurf,wysurf = mi.poly_pts(xsurf,ysurf,kx,ky)
+      return wxsurf,wysurf
+   else:
+      return xsurf,ysurf
