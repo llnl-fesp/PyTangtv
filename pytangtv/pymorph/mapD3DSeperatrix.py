@@ -31,8 +31,10 @@ def bracket_list(r0,z0,ri,zi):
                            zi.astype(np.float32).ctypes.data_as(c_float_p),
                            ct.c_int(xlen),ct.c_int(ylen),
                            ct.cast(xind,c_int_p),ct.cast(yind,c_int_p))
-        ongrid = np.array(xind[0:2*numpts])>=0
-        return (xind[ongrid],yind[ongrid])
+        xa = np.array(xind[0:2*numpts])
+        ya = np.array(yind[0:2*numpts])
+        ongrid = xa >= 0
+        return (xa[ongrid],ya[ongrid])
 
 
 def mapD3DSeperatrix(shot,time,geom,warp=None,runid='efit01',server=None,tree=None,vflip=False,hflip=False):
