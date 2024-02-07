@@ -76,8 +76,8 @@ thispath = os.path.dirname(thisfile)
 bitmaps = thispath+'/bitmaps'
 
 
-w = 0
-h = 0
+w = 100
+h = 100
 s = 1.0
 winx = 640
 winy = 860
@@ -141,6 +141,7 @@ s = args.scale
 winx = args.winx
 winy = args.winy
 comdiag = args.diag
+
 if comdiag in jopts:
     diag = jopts[args.diag]
     if 'window' in diag:
@@ -1089,16 +1090,24 @@ if __name__ == "__main__":
     root=Tk()
     if comdiag == 'test' or comdiag == 'test2':
         root.title('Test diag')
+    elif comdiag == 'None':
+        root.title('PyMorph')
     else:
-        if args.fgfilename == None and args.url == None:
+        if args.fgfilename == None and args.url == None and comdiag not in jopts:
             ifilename=askopenfilename(filetypes=[("tiff", ".tif .tiff"),
                                                ("png", "*.png"),
                                                ("allfiles", "*")])
         elif args.url != None:
             a = urlparse(args.url[0])
             ifilename = os.path.basename(a.path)
+        elif 'url' in diag:
+            a = urlparse(diag['url'])
+            ifilename = os.path.basename(a.path)
+        elif comdiag in jopts:
+            ifilename = comdiag
         elif args.fgfilename != None:
             ifilename=args.fgfilename
+
 
         root.title(ifilename)
     mymenu=menu.mymenu(root)
@@ -1117,9 +1126,13 @@ if __name__ == "__main__":
         w, h=im.size
         w=int(w * s)
         h=int(h * s)
+    elif comdiag != 'None':
+        im = pImage.new(mode='L',size=(w,h))
     else: 
         if s != 1:
-            if args.url == None:
+            if args.url != None:
+               im=pImage.open(ifilename).convert('L')
+            elif 'url' in diag:
                im=pImage.open(ifilename).convert('L')
             else:
                response = requests.get(args.url[0])
