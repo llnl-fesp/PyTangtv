@@ -1150,7 +1150,6 @@ if __name__ == "__main__":
         w = int(w * s)
         h = int(h * s)
         im = im.resize((w, h), pImage.Resampling.LANCZOS)
-    print(s)
     mymenu = menu.mymenu(root)
     frame = Frame(root)
     frame.pack(expand=FALSE, fill=BOTH)
