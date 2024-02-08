@@ -127,11 +127,11 @@ parser.add_argument('--width', type=int,
 parser.add_argument('--height', type=int,
                     help='pixel height of scrollable image window', default=0)
 parser.add_argument('--scale', type=int,
-                    help='integer scaling factor of scrollable image window', default=1.0)
+                    help='integer scaling factor of scrollable image window', default=0.0)
 parser.add_argument('--winx', type=int,
-                    help='pixel width of application', default=640)
+                    help='pixel width of application', default=0)
 parser.add_argument('--winy', type=int,
-                    help='pixel height of application', default=860)
+                    help='pixel height of application', default=0)
 parser.add_argument('--diag', type=str,
                     help='Diagnostic system nickname in config file', default='None')
 parser.add_argument('--version', action='store_true',
@@ -183,11 +183,11 @@ elif comdiag == 'test2':
     h = defaults['height']
     w = defaults['width']
 
-w = args.width
-h = args.height
-s = args.scale
-winx = args.winx
-winy = args.winy
+if args.width > 0: w = args.width
+if args.height > 0: h = args.height
+if args.scale > 0: s = args.scale
+if args.winx > 0: winx = args.winx
+if args.winx > 0: winy = args.winy
 
 if 'mdsplus' in diag:
     mdsargs = diag['mdsplus']
@@ -332,7 +332,7 @@ class Images():
             if shot != None:
                 tree = mdsserver.openTree(self.mdsdata['mdstree'], shot)
                 self.viddata = np.array(mdsserver.get(self.mdsdata['node']))
-                print(self.viddata.shape)
+                # print(self.viddata.shape)
                 self.cmin = float(self.viddata.min())
                 self.cmax = float(self.viddata.max())
                 # try:
@@ -364,6 +364,10 @@ class Images():
                         self.vflip = True
                     if 'hflip' in self.mdsdata and self.mdsdata['hflip'] == 1:
                         self.hflip = True
+                    i = np.asarray(
+                        self.viddata[self.vidind, :, :], dtype=np.float32)
+                    self.image = pImage.fromarray(
+                        bytescale(i, cmin=self.cmin, cmax=self.cmax))
                 # except:
                 else:
                     print("Could not reshape array: ", self.viddata.shape)
