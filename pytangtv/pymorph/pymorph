@@ -321,6 +321,7 @@ class Images():
             self.viddata[self.vidind, :, :], dtype=np.float32)
         self.image = pImage.fromarray(
             bytescale(i, cmin=self.cmin, cmax=self.cmax))
+        self.dirty = True
         self.ui.dlabel.set('Frame(%d)' % (self.vidnum,))
         self.reset()
 
@@ -372,6 +373,7 @@ class Images():
                         self.viddata[self.vidind, :, :], dtype=np.float32)
                     self.image = pImage.fromarray(
                         bytescale(i, cmin=self.cmin, cmax=self.cmax))
+                    self.dirty = True
                 # except:
                 else:
                     print("Could not reshape array: ", self.viddata.shape)
