@@ -371,7 +371,6 @@ class Images():
                 self.video = True
             else:
                 print("No shot specified")
-            mdsserver.disconnect()
             self.reset()
             self.ui.dlabel.set('Frame(%d)' % (self.vidnum,))
         else:
@@ -592,7 +591,6 @@ class UI(Frame):
                     #    bytescale(self.fimage.dimage))
             else:
                 print("No shot specified")
-            mdsserver.disconnect()
             self.dirty = True
             self.refreshpoly()
             self.refresh()
