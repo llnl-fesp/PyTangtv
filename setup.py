@@ -20,7 +20,7 @@ elif sys.version_info >= (3,5):
 
 setup(
     name='PyTangtv',
-    version='1.0.13',
+    version='1.0.14',
     packages=['pytangtv','pytangtv.pymorph','pytangtv.pyalign','pytangtv.pymask','pytangtv.picker'],
     maintainer='Bill Meyer',
     maintainer_email='meyer8@llnl.gov',

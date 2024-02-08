@@ -317,6 +317,10 @@ class Images():
             self.vflip = True
         if 'hflip' in self.mdsdata and self.mdsdata['hflip'] == 1:
             self.hflip = True
+        i = np.asarray(
+            self.viddata[self.vidind, :, :], dtype=np.float32)
+        self.image = pImage.fromarray(
+            bytescale(i, cmin=self.cmin, cmax=self.cmax))
         self.ui.dlabel.set('Frame(%d)' % (self.vidnum,))
         self.reset()
 
