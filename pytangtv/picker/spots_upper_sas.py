@@ -13,7 +13,7 @@ for i in range(6):
 	spots.append([5 + i * 10,55])
 for j in range(5):
    for i in range(8):
-	spots.append([5 + i * 10,45 - j * 10])
+        spots.append([5 + i * 10,45 - j * 10])
 for i in range(len(spots)):
         x = spots[i][0]
         y = spots[i][1] + 1.8
