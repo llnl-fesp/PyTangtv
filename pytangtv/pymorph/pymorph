@@ -908,7 +908,9 @@ class UI(Frame):
         warp['yshift'] = 0
         warp['rotation'] = 0
         warp['degree'] = self.degree
-        warp['direction'] = self.warpdirection
+        warp['direction'] = 1 # The warp direction for this app is basically always forward. 
+                              # The app direction (for/rev) is really regarding im->bg or bg->im and not
+                              # the warping direction.
         # with open(yfilename, 'w') as outfile:
         #    yaml.dump(warp, outfile, indent=8)
         with open(yfilename, 'w') as outfile:
@@ -936,7 +938,9 @@ class UI(Frame):
         warp['yshift'] = 0
         warp['rotation'] = 0
         warp['degree'] = self.degree
-        warp['direction'] = self.warpdirection
+        warp['direction'] = 1 # The warp direction for this app is basically always forward. 
+                              # The app direction (for/rev) is really regarding im->bg or bg->im and not
+                              # the warping direction.
         with open(jfilename, 'w') as outfile:
             json.dump(warp, outfile, indent=8)
 
