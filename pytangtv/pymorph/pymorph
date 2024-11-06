@@ -692,7 +692,25 @@ class UI(Frame):
 
     def seldirection(self):
         global direction
-        self.warpdirection = int(direction.get())
+        ldir = int(direction.get())
+        if ldir == 3:
+           if self.warpdirection == 1: 
+                direction.set(2)
+                self.warpdirection = 2
+           elif self.warpdirection == 2: 
+                direction.set(1)
+                self.warpdirection = 1
+        elif self.warpdirection != ldir:
+           self.warpdirection = ldir
+           if len(self.wmarks) > 0:
+               savemarks = self.wmarks
+               self.wmarks = self.bmarks
+               self.bmarks = savemarks
+               self.xi = np.array(self.wmarks)[:, 0]
+               self.yi = np.array(self.wmarks)[:, 1]
+               self.xo = np.array(self.bmarks)[:, 0]
+               self.yo = np.array(self.bmarks)[:, 1]
+        self.refreshpoly()
         self.dirty = True
         self.refresh()
 
@@ -1246,6 +1264,8 @@ if __name__ == "__main__":
                      value=1, command=ui.seldirection).pack(anchor=N)
     R2 = Radiobutton(frame4, text="reverse", variable=direction,
                      value=2, command=ui.seldirection).pack(anchor=N)
+    R3 = Radiobutton(frame4, text="force flip", variable=direction,
+                     value=3, command=ui.seldirection).pack(anchor=N)
     direction.set(1)
 
     frame2 = Frame(frame)
