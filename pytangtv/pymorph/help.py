@@ -1,4 +1,6 @@
 
+from pytangtv.check4updates import check4updates,updatemsgs
+
 try:
    from Tkinter import *
    from tkFileDialog import askopenfilename, asksaveasfilename
@@ -63,6 +65,33 @@ class popupHelpWindow:
         self.b.pack()
         self.top.lift()
 
+    def paste(self, event=None):
+        print(event)
+
+    def cleanup(self, event=None):
+        self.top.destroy()
+
+class popupUpdateWindow:
+    def __init__(self, root):
+        from pkg_resources import get_distribution, DistributionNotFound
+        top = self.top = Toplevel(root)
+        self.l = Label(top, text="Pymorph check for updates")
+        self.l.pack()
+        self.t = Text(top,height=10)
+        self.t.pack()
+        self.top.lift()
+        try:
+            _dist = get_distribution('PyTangtv')
+        except DistributionNotFound:
+            _version = 'Not installed with setup.py/pip'
+        else:
+            _version = _dist.version
+        msg = updatemsgs('https://pypi.org/pypi/pytangtv/json', thisver=_version)
+
+        self.t.insert('1.0',msg)
+        self.b = Button(top, text='Ok', command=self.cleanup)
+        self.b.pack()
+   
     def paste(self, event=None):
         print(event)
 

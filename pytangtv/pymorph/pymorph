@@ -19,7 +19,7 @@ import getopt
 from math import *
 import pytangtv
 from pytangtv.pymorph.bytescale import bytescale
-from pytangtv.check4updates import check4updates
+from pytangtv.check4updates import check4updates,updatemsgs
 from scipy.io import readsav
 try:
     from Tkinter import *
@@ -79,13 +79,11 @@ thispath = os.path.dirname(thisfile)
 bitmaps = thispath+'/bitmaps'
 
 
-freeze = False
 w = 100
 h = 100
 s = 1.0
 winx = 640
 winy = 860
-morph = False
 jopts = []
 
 try:
@@ -499,6 +497,8 @@ class UI(Frame):
         self.parent = master
         self.fimage = Images(im, s=s, ui=self, imagename=imagename)
         self.bgimage = Images(im, s=s, ui=self, imagename=imagename)
+        self.morph = False
+        self.freeze = False
         self.mode = 1
         self.degree = 1
         self.warpdirection = 1
@@ -717,12 +717,7 @@ class UI(Frame):
         self.refresh()
 
     def seldeg(self):
-        global degree
         self.degree = degree.get()
-        if morph and len(self.bmarks) < (self.degree+1)**2:
-            self.morphbut.config(relief="sunken", image=add)
-        elif morph:
-            self.morphbut.config(relief="sunken", image=on)
         self.dirty = True
         self.refreshpoly()
         self.refresh()
@@ -781,9 +776,14 @@ class UI(Frame):
             self.xo = np.array(self.bmarks)[:, 0]
             self.yo = np.array(self.bmarks)[:, 1]
             self.refreshpoly()
-        if morph and self.warpdirection == 1 and len(self.bmarks) >= (self.degree+1)**2:
+        if not self.freeze and self.morph and self.warpdirection == 1 and len(self.bmarks) >= (self.degree+1)**2:
             cx, cy = mi.poly_pt(cx, cy, self.kx, self.ky)
-        if morph and self.warpdirection == 2 and len(self.bmarks) >= (self.degree+1)**2:
+        elif self.freeze and self.morph and self.warpdirection == 1:
+            cx, cy = mi.poly_pt(cx, cy, self.kx, self.ky)
+        
+        if not self.freeze and self.morph and self.warpdirection == 2 and len(self.bmarks) >= (self.degree+1)**2:
+            cx, cy = mi.poly_pt(cx, cy, self.kx, self.ky)
+        elif self.freeze and self.morph and self.warpdirection == 2:
             cx, cy = mi.poly_pt(cx, cy, self.kx, self.ky)
         self.x1 = cx
         self.y1 = cy
@@ -810,10 +810,11 @@ class UI(Frame):
         self.dirty = True
         self.wmarks = []
         self.bmarks = []
-        self.kx = []
-        self.ky = []
-        self.rkx = []
-        self.rky = []
+        if not self.freeze:
+           self.kx = []
+           self.ky = []
+           self.rkx = []
+           self.rky = []
         self.xi = []
         self.yi = []
         self.xo = []
@@ -1020,30 +1021,28 @@ class UI(Frame):
         self.refresh()
 
     def morphit(self):
-        global morph
         self.dirty = True
-        if morph:
+        if self.morph:
             self.morphbut.config(relief="raised", image=off)
-            morph = False
+            self.morph = False
         else:
-            if len(self.bmarks) < (self.degree+1)**2:
+            if not self.freeze and len(self.bmarks) < (self.degree+1)**2:
                 self.morphbut.config(relief="sunken", image=add)
             else:
                 self.morphbut.config(relief="sunken", image=on)
-            morph = True
+            self.morph = True
         self.refresh()
 
     def freezbut(self):
-        global freeze
-        if freeze:
+        if self.freeze:
             self.freezbut.config(relief="raised", image=foff)
-            freeze = False
+            self.freeze = False
             self.dirty = True
             self.refreshpoly()
             self.refresh()
         else:
             self.freezbut.config(relief="sunken", image=fon)
-            freeze = True
+            self.freeze = True
 
     def refreshcb(self, val):
         self.refresh()
@@ -1059,7 +1058,7 @@ class UI(Frame):
         self.cmaxentry.insert(0, str(self.bgimage.cmax))
 
     def refreshpoly(self):
-        if not freeze and len(self.bmarks) >= (self.degree+1)**2:
+        if not self.freeze and len(self.bmarks) >= (self.degree+1)**2:
             self.kx, self.ky = mi.polywarp(
                 self.xi, self.yi, self.xo, self.yo, degree=self.degree)
             self.rkx, self.rky = mi.polywarp(
@@ -1078,8 +1077,8 @@ class UI(Frame):
         im1 = pImage.new(
             'L', (self.fimage.buimage.size[0], self.fimage.buimage.size[1]))
         im1.paste(self.fimage.dimage, (0, 0))
-        if morph and self.warpdirection == 1:
-            if len(self.bmarks) >= (self.degree+1)**2:
+        if self.morph and self.warpdirection == 1:
+            if self.freeze or len(self.bmarks) >= (self.degree+1)**2:
                 self.morphbut.config(relief="sunken", image=on)
                 if self.dirty:
                     self.fimage.mimage = pImage.fromarray(mi.poly_2d(
@@ -1097,8 +1096,8 @@ class UI(Frame):
         if self.bgimage != None:
             im2 = pImage.new(
                 'L', (self.fimage.buimage.size[0], self.fimage.buimage.size[1]))
-            if morph and self.warpdirection == 2:
-                if len(self.bmarks) >= (self.degree+1)**2:
+            if self.morph and self.warpdirection == 2:
+                if self.freeze or len(self.bmarks) >= (self.degree+1)**2:
                     self.morphbut.config(relief="sunken", image=on)
                     if self.dirty:
                         self.bgimage.mimage = pImage.fromarray(mi.poly_2d(
@@ -1159,7 +1158,7 @@ if __name__ == "__main__":
 
     import sys
 
-    check4updates('https://pypi.org/pypi/pytangtv/json', thisver=_version)
+    #check4updates('https://pypi.org/pypi/pytangtv/json', thisver=_version)
 
     root = Tk()
     fgname="none"

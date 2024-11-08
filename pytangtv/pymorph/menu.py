@@ -208,6 +208,7 @@ class mymenu:
         mb_hfunc.pack(side=RIGHT)
         mb_hfunc.menu = Menu(mb_hfunc)
         mb_hfunc.menu.add_command(label='Help', command=self.help)
+        mb_hfunc.menu.add_command(label='Check for updates', command=self.update)
         mb_hfunc.menu.add_separator()
         mb_hfunc.menu.add_command(label='About', command=self.showvers)
 
@@ -459,5 +460,9 @@ class mymenu:
 
     def help(self):
         self.w = help.popupHelpWindow(self.root)
+        self.root.wait_window(self.w.top)
+
+    def update(self):
+        self.w = help.popupUpdateWindow(self.root)
         self.root.wait_window(self.w.top)
 
