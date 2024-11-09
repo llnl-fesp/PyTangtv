@@ -186,7 +186,7 @@ if args.width > 0: w = args.width
 if args.height > 0: h = args.height
 if args.scale > 0: s = args.scale
 if args.winx > 0: winx = args.winx
-if args.winx > 0: winy = args.winy
+if args.winy > 0: winy = args.winy
 
 if 'mdsplus' in diag:
     mdsargs = diag['mdsplus']
@@ -505,7 +505,8 @@ class UI(Frame):
         self.warptype = 1
         self.draw = ImageDraw.Draw(self.fimage.dimage)
         self.bitmap = ImageTk.PhotoImage(im)
-        if self.fimage.W > self.winx or self.fimage.H > self.winy:
+        #if self.fimage.W > self.winx or self.fimage.H > self.winy:
+        if True:
             # self.frame = Frame(self,width=self.winx, height=self.winy)
             # self.frame.grid(row=0,column=0)
             self.canvas = Canvas(
