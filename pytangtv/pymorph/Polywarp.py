@@ -43,8 +43,11 @@ def polywarp(xi,yi,xo,yo,degree=1):
     ky = np.dot(kk,x[1,:].T).reshape(degree+1,degree+1)
     return kx,ky
 
-def poly_2d(a, kx, ky):
+def poly_2d(a, kx, ky, dims=None):
     xlen, ylen = a.shape
+    if dims != None:
+       xlen = dims[0]
+       ylen = dims[1]
     degree = len(kx)
 
     xi, yi = np.mgrid[0:xlen, 0:ylen]

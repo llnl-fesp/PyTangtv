@@ -44,8 +44,16 @@ def polywarp(xi, yi, xo, yo, degree=1):
     return kx, ky
 
 
-def poly_2d(a, kx, ky):
-    ylen, xlen = a.shape
+def poly_2d(i, kx, ky,dims=None):
+    ylen, xlen = i.shape 
+    if dims != None and ylen<dims[0] and xlen<dims[1]:
+       a = np.zeros((dims[1],dims[0]),dtype=np.int32)
+       ylen, xlen = i.shape 
+       a[0:ylen,0:xlen] = i
+       ylen,xlen = a.shape 
+    else:
+       a = i
+       ylen, xlen = a.shape
     bylen = ylen + 2
     bxlen = xlen + 2
     b = np.zeros((bylen,bxlen),dtype=np.int32)

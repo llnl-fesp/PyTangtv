@@ -79,8 +79,8 @@ thispath = os.path.dirname(thisfile)
 bitmaps = thispath+'/bitmaps'
 
 
-w = 100
-h = 100
+w = None
+h = None
 s = 1.0
 winx = 640
 winy = 860
@@ -1083,7 +1083,7 @@ class UI(Frame):
                 self.morphbut.config(relief="sunken", image=on)
                 if self.dirty:
                     self.fimage.mimage = pImage.fromarray(mi.poly_2d(
-                        np.asarray(im1), self.kx, self.ky)).convert('L')
+                        np.asarray(im1), self.kx, self.ky,dims=self.bgimage.buimage.size)).convert('L')
                 im1 = self.fimage.mimage
             else:
                 self.morphbut.config(relief="sunken", image=add)
@@ -1102,7 +1102,7 @@ class UI(Frame):
                     self.morphbut.config(relief="sunken", image=on)
                     if self.dirty:
                         self.bgimage.mimage = pImage.fromarray(mi.poly_2d(
-                            np.asarray(self.bgimage.dimage), self.kx, self.ky)).convert('L')
+                            np.asarray(self.bgimage.dimage), self.kx, self.ky,dims=self.fimage.buimage.size)).convert('L')
                     im2.paste(self.bgimage.mimage, (0, 0))
                 else:
                     self.morphbut.config(relief="sunken", image=add)
@@ -1307,8 +1307,10 @@ if __name__ == "__main__":
     ui.bminentry = Entry(frame2, width=10)
     ui.bminentry.pack(side=LEFT, padx=2, pady=2)
     ui.bminentry.bind('<Key-Return>', ui.frange_update)
+    ui.bminentry.bind('<Return>', ui.frange_update)
     ui.bmaxentry = Entry(frame2, width=10)
     ui.bmaxentry.bind('<Key-Return>', ui.frange_update)
+    ui.bmaxentry.bind('<Return>', ui.frange_update)
     ui.bmaxentry.pack(side=LEFT, padx=2, pady=2)
     ui.bminentry.delete(0, END)
     ui.bminentry.insert(0, "0")
@@ -1321,6 +1323,7 @@ if __name__ == "__main__":
     Label(frame2, textvariable=ui.dlabel).pack(side=LEFT)
     ui.frentry = Entry(frame2, width=10)
     ui.frentry.bind('<Key-Return>', ui.frame_update)
+    ui.frentry.bind('<Return>', ui.frame_update)
     ui.frentry.insert(0, "0")
     ui.frentry.pack(side=LEFT, padx=2, pady=2)
     ui.frplus = Button(frame2, width=2, text="+", command=ui.frinc)
@@ -1333,8 +1336,10 @@ if __name__ == "__main__":
     ui.cminentry = Entry(frame2, width=10)
     ui.cminentry.pack(side=LEFT, padx=2, pady=2)
     ui.cminentry.bind('<Key-Return>', ui.brange_update)
+    ui.cminentry.bind('<Return>', ui.brange_update)
     ui.cmaxentry = Entry(frame2, width=10)
     ui.cmaxentry.bind('<Key-Return>', ui.brange_update)
+    ui.cmaxentry.bind('<Return>', ui.brange_update)
     ui.cmaxentry.pack(side=LEFT, padx=2, pady=2)
     ui.cminentry.delete(0, END)
     ui.cminentry.insert(0, "0")
