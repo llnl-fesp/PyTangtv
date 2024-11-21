@@ -1075,18 +1075,29 @@ class UI(Frame):
         xoff = 0
         yoff = 0
         width, height = self.fimage.buimage.size
-        im1 = pImage.new(
-            'L', (self.fimage.buimage.size[0], self.fimage.buimage.size[1]))
-        im1.paste(self.fimage.dimage, (0, 0))
         if self.morph and self.warpdirection == 1:
-            if self.freeze or len(self.bmarks) >= (self.degree+1)**2:
+            if not self.freeze and  len(self.bmarks) >= (self.degree+1)**2:
                 self.morphbut.config(relief="sunken", image=on)
                 if self.dirty:
                     self.fimage.mimage = pImage.fromarray(mi.poly_2d(
-                        np.asarray(im1), self.kx, self.ky,dims=self.bgimage.buimage.size)).convert('L')
-                im1 = self.fimage.mimage
-            else:
+                        np.asarray(self.fimage.dimage), self.kx, self.ky,dims=[w,h])).convert('L')
+                tmpim = self.fimage.mimage
+            elif self.freeze and len(self.bmarks) >= (self.degree+1)**2:
+                self.morphbut.config(relief="sunken", image=on)
+                tmpim = self.fimage.mimage
+            elif self.freeze and len(self.bmarks) < (self.degree+1)**2:
                 self.morphbut.config(relief="sunken", image=add)
+                tmpim = self.fimage.mimage
+            elif not self.freeze and len(self.bmarks) < (self.degree+1)**2:
+                self.morphbut.config(relief="sunken", image=add)
+                tmpim = self.fimage.dimage
+            else:
+                tmpim = self.fimage.dimage
+            im1 = pImage.new( 'L', (w,h))
+            im1.paste(tmpim, (0, 0))
+        else:
+            im1 = pImage.new( 'L', (w,h))
+            im1.paste(self.fimage.dimage, (0, 0))
 
         wsize = self.fimage.buimage.size[0]
         hsize = self.fimage.buimage.size[1]
@@ -1095,21 +1106,28 @@ class UI(Frame):
         s = self.scale.get()
 
         if self.bgimage != None:
-            im2 = pImage.new(
-                'L', (self.fimage.buimage.size[0], self.fimage.buimage.size[1]))
             if self.morph and self.warpdirection == 2:
-                if self.freeze or len(self.bmarks) >= (self.degree+1)**2:
+                if not self.freeze and len(self.bmarks) >= (self.degree+1)**2:
                     self.morphbut.config(relief="sunken", image=on)
                     if self.dirty:
                         self.bgimage.mimage = pImage.fromarray(mi.poly_2d(
-                            np.asarray(self.bgimage.dimage), self.kx, self.ky,dims=self.fimage.buimage.size)).convert('L')
-                    im2.paste(self.bgimage.mimage, (0, 0))
-                else:
+                            np.asarray(self.bgimage.dimage), self.kx, self.ky,dims=[w,h])).convert('L')
+                    tmpim = self.bgimage.mimage
+                elif self.freeze and len(self.bmarks) >= (self.degree+1)**2:
+                    self.morphbut.config(relief="sunken", image=on)
+                    tmpim = self.bgimage.mimage
+                elif self.freeze and len(self.bmarks) < (self.degree+1)**2:
                     self.morphbut.config(relief="sunken", image=add)
-                    im2.paste(self.bgimage.dimage, (0, 0))
+                    tmpim = self.bgimage.mimage
+                elif not self.freeze and len(self.bmarks) < (self.degree+1)**2:
+                    self.morphbut.config(relief="sunken", image=add)
+                    tmpim = self.bgimage.dimage
+                else:
+                    tmpim = self.bgimage.dimage
+                im2 = pImage.new( 'L', (w,h))
+                im2.paste(tmpim, (0, 0))
             else:
-                im2 = pImage.new(
-                    'L', (self.fimage.buimage.size[0], self.fimage.buimage.size[1]))
+                im2 = pImage.new( 'L', (w,h)) 
                 im2.paste(self.bgimage.dimage, (0, 0))
             self.im2 = im2
             if self.bl == -1:
@@ -1206,8 +1224,8 @@ if __name__ == "__main__":
         root.title(ifilename)
         fgname = ifilename
 
+    w, h = im.size
     if s != 1:
-        w, h = im.size
         w = int(w * s)
         h = int(h * s)
         im = im.resize((w, h), pImage.Resampling.LANCZOS)
@@ -1232,6 +1250,13 @@ if __name__ == "__main__":
             # ui.bgimage = pImage.open(args[1]).convert('L').resize((w, h), pImage.Resampling.LANCZOS)
             ui.bgimage = Images(pImage.open(
                 args.bgfilename).convert('L'), ui=ui, imagename=args.bgfilename)
+
+    bgw,bgh = ui.bgimage.buimage.size
+    if s != 1:
+        bgw = int(bgw * s)
+        bgh = int(bgh * s)
+    if bgw > w: w = bgw
+    if bgh > h: h = bgh
 
     ui.imscale = s
     controls.controls(frame, ui)
