@@ -278,6 +278,7 @@ class Images():
         self.transpose = not self.transpose
         self.dirty = True
 
+
     def load_data_from_savefile(self, sfilename, varname='viddata', savefiledata={}):
         self.dimageargs = self.savefileargs
         self.video = True
@@ -559,6 +560,24 @@ class UI(Frame):
         self.xo = []
         self.yo = []
         self.dirty = True
+
+    def load_warp_from_savefile(self, wfilename):
+        sf = readsav(wfilename)
+        if 'varname' in self.savefilewarp:
+            varname = self.savefilewarp['varname']
+        w = sf[varname]
+        self.xi = w['XI'][0].tolist()
+        self.xo = w['XO'][0].tolist()
+        self.yi = w['YI'][0].tolist()
+        self.yo = w['YO'][0].tolist()
+        self.wmarks = np.transpose((self.xi, self.yi)).tolist()
+        self.bmarks = np.transpose((self.xo, self.yo)).tolist()
+        self.degree = int(w['plydegree'][0])
+        degree.set(self.degree)
+        self.warpdirection = 1
+        self.dirty = True
+        self.refreshpoly()
+        self.refresh()
 
     def load_warp_from_mdsplus(self, shot=None):
         import MDSplus as mds
@@ -994,6 +1013,7 @@ class UI(Frame):
             self.warptype = warp['type']
         else:
             self.warptype = 1
+        degree.set(self.degree)
         self.refreshpoly()
         self.refresh()
 
@@ -1018,6 +1038,7 @@ class UI(Frame):
             self.warptype = warp['type']
         else:
             self.warptype = 1
+        degree.set(self.degree)
         self.refreshpoly()
         self.refresh()
 

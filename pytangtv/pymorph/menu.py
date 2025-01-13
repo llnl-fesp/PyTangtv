@@ -91,6 +91,7 @@ class mymenu:
         root.bind_all("<Control-l>", self.loadwarpjson)
         root.bind_all("<Control-y>", self.loadwarpyaml)
         root.bind_all("<Control-m>", self.loadwarpmds)
+        #root.bind_all("<Control-m>", self.loadwarpsave)
         root.bind_all("<Control-t>", self.savewarpjson)
         root.bind_all("<Control-s>", self.savewarpyaml)
         self.root = root
@@ -109,6 +110,7 @@ class mymenu:
                                  accelerator="Ctrl+l")
         mb_file.menu.add_command(label='load warp mds', command=self.loadwarpmds,
                                  accelerator="Ctrl+m")
+        mb_file.menu.add_command(label='load warp save', command=self.loadwarpsave)
         mb_file.menu.add_command(label='save warp yaml', command=self.savewarpyaml,
                                  accelerator="Ctrl+s")
         mb_file.menu.add_command(label='save warp json', command=self.savewarpjson,
@@ -277,6 +279,12 @@ class mymenu:
         self.root.wait_window(self.w.top)
         print(self.w.value)
         self.ui.load_warp_from_mdsplus(shot=self.w.value)
+        self.ui.refresh()
+
+    def loadwarpsave(self, event=None):
+        wfilename = str(askopenfilename(filetypes=[("dat", "*.dat")]))
+        if wfilename != None:
+            self.ui.load_warp_from_savefile(wfilename)
         self.ui.refresh()
 
     def loadurl(self, event=None):
