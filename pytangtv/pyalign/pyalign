@@ -26,6 +26,13 @@ from math import *
 from pytangtv.pyalign import menu
 from pytangtv.pyalign import controls
 from pytangtv.check4updates import check4updates
+
+try:
+    from PIL.Image import ANTIALIAS
+except:
+    from PIL.Image import LANCZOS as ANTIALIAS
+
+
 spawned = False
 w = 0
 h = 0
@@ -215,7 +222,7 @@ class UI(Frame):
     wsize = int((float(self.image.size[0])*float(self.xstr.get())))
     hsize = int((float(self.image.size[1])*float(self.ystr.get())))
     #hsize = int((float(self.image.size[1])*float(self.xstr.get())))
-    im1 = im1.resize((wsize,hsize),pImage.ANTIALIAS)
+    im1 = im1.resize((wsize,hsize),ANTIALIAS)
     dimage = im1
     s = self.scale.get()
 
@@ -290,16 +297,16 @@ if __name__ == "__main__":
        w, h = im.size
        w = w * s
        h = h * s
-       im = pImage.open(filename).convert('L').resize((w,h),pImage.ANTIALIAS)
+       im = pImage.open(filename).convert('L').resize((w,h),ANTIALIAS)
     elif w != 0:
-       im = pImage.open(filename).convert('L').resize((w,h),pImage.ANTIALIAS)
+       im = pImage.open(filename).convert('L').resize((w,h),ANTIALIAS)
     else:
        im = pImage.open(filename).convert('L')
 
     ui =  UI(frame, im, s, winx=winx,winy=winy)
     mymenu.addui(ui)
     if len(args) > 1:
-        ui.bgimage = pImage.open(args[1]).convert('L').resize((ui.W,ui.H),pImage.ANTIALIAS)
+        ui.bgimage = pImage.open(args[1]).convert('L').resize((ui.W,ui.H),ANTIALIAS)
     ui.bubgimage = ui.bgimage
     controls.controls(frame,ui)
 

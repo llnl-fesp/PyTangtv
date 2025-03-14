@@ -13,6 +13,13 @@ try:
    from tkinter import *
 except:
    from Tkinter import *
+
+try:
+    from PIL.Image import ANTIALIAS
+except:
+    from PIL.Image import LANCZOS as ANTIALIAS
+    
+
 cam = "lower"
 rev = False
 jsonout = False
@@ -415,7 +422,7 @@ if __name__ == "__main__":
         h = hi
     scalew = w / float(wi)
     scaleh = h / float(hi)
-    im = pImage.open(filename).convert('L').resize((w, h), pImage.ANTIALIAS)
+    im = pImage.open(filename).convert('L').resize((w, h), ANTIALIAS)
 
     if cam == "upper":
         UI(root, im, rev=rev, winx=winx, winy=winy)

@@ -19,6 +19,10 @@ except:
 import sys
 #import scipy.signal
 
+try:
+    from PIL.Image import ANTIALIAS
+except:
+    from PIL.Image import LANCZOS as ANTIALIAS
 
 class popupShotWindow:
     def __init__(self, root):
@@ -194,7 +198,7 @@ class mymenu:
                                               ("allfiles", "*")]))
         if ifilename != None:
             self.ui.image = pImage.open(ifilename).convert(
-                'L').resize((self.ui.W, self.ui.H), pImage.ANTIALIAS)
+                'L').resize((self.ui.W, self.ui.H), ANTIALIAS)
             self.ui.buimage = self.ui.image
             self.ui.refresh()
 
@@ -218,7 +222,7 @@ class mymenu:
                                               ("allfiles", "*")]))
         if ifilename != None:
             self.ui.bgimage = pImage.open(ifilename).convert(
-                'L').resize((self.ui.W, self.ui.H), pImage.ANTIALIAS)
+                'L').resize((self.ui.W, self.ui.H), ANTIALIAS)
             self.ui.bubgimage = self.ui.bgimage
             self.ui.refresh()
 

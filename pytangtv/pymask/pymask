@@ -30,6 +30,11 @@ except:
 
 from pytangtv.check4updates import check4updates
 
+try:
+    from PIL.Image import ANTIALIAS
+except:
+    from PIL.Image import LANCZOS as ANTIALIAS
+
 spawned = False
 w = 0
 h = 0
@@ -219,7 +224,7 @@ class UI(Frame):
             self.hpos*self.S), yoffset=int(self.vpos*self.S))
         wsize = self.image.size[0]
         hsize = self.image.size[1]
-        im1 = im1.resize((wsize, hsize), Image.ANTIALIAS)
+        im1 = im1.resize((wsize, hsize), ANTIALIAS)
         dimage = im1
 
         if self.bgimage != None:
@@ -299,9 +304,9 @@ if __name__ == "__main__":
         w, h = im.size
         w = w * s
         h = h * s
-        im = Image.open(filename).convert('L').resize((w, h), Image.ANTIALIAS)
+        im = Image.open(filename).convert('L').resize((w, h), ANTIALIAS)
     elif w != 0:
-        im = Image.open(filename).convert('L').resize((w, h), Image.ANTIALIAS)
+        im = Image.open(filename).convert('L').resize((w, h), ANTIALIAS)
     else:
         im = Image.open(filename).convert('L')
 
@@ -309,7 +314,7 @@ if __name__ == "__main__":
     #mymenu.addui(ui)
     if len(args) > 1:
         ui.bgimage = Image.open(args[1]).convert(
-            'L').resize((ui.W, ui.H), Image.ANTIALIAS)
+            'L').resize((ui.W, ui.H), ANTIALIAS)
         ui.bubgimage = ui.bgimage
     # controls.controls(frame,ui)
 
