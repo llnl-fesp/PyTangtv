@@ -275,13 +275,11 @@ if __name__ == "__main__":
 
     import sys
 
-    from pkg_resources import get_distribution, DistributionNotFound
     try:
-        _dist = get_distribution('PyTangtv')
-    except DistributionNotFound:
-        _version = 'Not installed with setup.py/pip'
-    else:
-        _version = _dist.version
+        from importlib import metadata
+        _version = metadata.version('PyTangtv')
+    except:
+        _version = 'Version unknown'
     check4updates('https://pypi.org/pypi/pytangtv/json',thisver=_version)
 
     root = Tk()
