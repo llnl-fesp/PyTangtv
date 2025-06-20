@@ -1295,12 +1295,24 @@ if __name__ == "__main__":
     frame2.pack(side=TOP)
     degree = IntVar()
     Label(frame2, text='Degree Poly').pack(side=LEFT)
-    R1 = Radiobutton(frame2, text="1", variable=degree,
+    dgframe1 = Frame(frame2)
+    dgframe1.pack(side=LEFT)
+    dgframe2 = Frame(frame2)
+    dgframe2.pack(side=LEFT)
+
+
+    R1 = Radiobutton(dgframe1, text="1", variable=degree,
                      value=1, command=ui.seldeg).pack(anchor=N)
-    R2 = Radiobutton(frame2, text="2", variable=degree,
+    R2 = Radiobutton(dgframe1, text="2", variable=degree,
                      value=2, command=ui.seldeg).pack(anchor=N)
-    R3 = Radiobutton(frame2, text="3", variable=degree,
+    R3 = Radiobutton(dgframe1, text="3", variable=degree,
                      value=3, command=ui.seldeg).pack(anchor=N)
+    R4 = Radiobutton(dgframe2, text="4", variable=degree,
+                     value=4, command=ui.seldeg).pack(anchor=N)
+    R5 = Radiobutton(dgframe2, text="5", variable=degree,
+                     value=5, command=ui.seldeg).pack(anchor=N)
+    R6 = Radiobutton(dgframe2, text="6", variable=degree,
+                     value=6, command=ui.seldeg).pack(anchor=N)
     degree.set(1)
     frame2 = Frame(frame)
     frame2.pack(side=TOP)
