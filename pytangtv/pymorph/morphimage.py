@@ -48,8 +48,10 @@ def poly_2d(i, kx, ky,dims=None):
     ylen, xlen = i.shape 
     if dims != None:
        a = np.zeros((dims[1],dims[0]),dtype=np.int32)
-       ylen, xlen = i.shape 
-       a[0:ylen,0:xlen] = i
+       iylen, ixlen = i.shape 
+       if iylen > dims[1]: iylen = dims[1]
+       if ixlen > dims[0]: ixlen = dims[0]
+       a[0:iylen,0:ixlen] = i
        ylen,xlen = a.shape 
     else:
        a = i
