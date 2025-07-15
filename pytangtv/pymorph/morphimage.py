@@ -46,24 +46,21 @@ def polywarp(xi, yi, xo, yo, degree=1):
 
 def poly_2d(i, kx, ky,dims=None):
     ylen, xlen = i.shape 
+    iylen, ixlen = i.shape 
     if dims != None:
        a = np.zeros((dims[1],dims[0]),dtype=np.int32)
-       iylen, ixlen = i.shape 
-       if iylen > dims[1]: iylen = dims[1]
-       if ixlen > dims[0]: ixlen = dims[0]
-       a[0:iylen,0:ixlen] = i
-       ylen,xlen = a.shape 
+       ylen = dims[1]
+       xlen = dims[0]
     else:
-       a = i
-       ylen, xlen = a.shape
-    bylen = ylen + 2
-    bxlen = xlen + 2
+       a = np.zeros(i.shape,dtype=np.int32)
+    bylen = iylen + 2
+    bxlen = ixlen + 2
     b = np.zeros((bylen,bxlen),dtype=np.int32)
-    b[1:-1,1:-1] = a   # add zeros around the edge so the nearest neighbor is zero outside
+    b[1:-1,1:-1] = i   # add zeros around the edge so the nearest neighbor is zero outside
     degree = len(kx)-1
 
     yo, xo = np.mgrid[0:ylen, 0:xlen]
-    byo, bxo = np.mgrid[-1:ylen+1, -1:xlen+1]
+    byo, bxo = np.mgrid[-1:iylen+1, -1:ixlen+1]
     xi = np.zeros((ylen,xlen))
     yi = np.zeros((ylen,xlen))
 
