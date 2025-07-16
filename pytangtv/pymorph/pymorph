@@ -929,7 +929,7 @@ class UI(Frame):
 
     def showvers(self):
         mbox.showinfo("About Pymorph", '\nPython module {0} \nversion {1}\n'.format(
-            _dist.project_name, _dist.version))
+            "PyTangtv", _version))
 
     def savewarpyaml(self, yfilename='warp.yaml'):
         warp = {}
