@@ -40,7 +40,7 @@ import argparse
 
 from idlelib.tooltip import Hovertip
 try:
-    from importlib import metdata
+    from importlib import metadata
     _version = metadata.version('PyTangtv')
 except:
     _version = 'Version unknown'
