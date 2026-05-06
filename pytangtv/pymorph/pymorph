@@ -38,7 +38,7 @@ from urllib.parse import urlparse
 from io import BytesIO
 import argparse
 
-from idlelib.tooltip import Hovertip
+from pytangtv.pymorph.hovertip_compat import Hovertip
 try:
     from importlib import metadata
     _version = metadata.version('PyTangtv')
@@ -997,10 +997,14 @@ class UI(Frame):
         self.yi = np.array(warp['yi'])
         self.xo = np.array(warp['xo'])
         self.yo = np.array(warp['yo'])
-        self.hpos = warp['xshift']
-        self.vpos = warp['yshift']
-        self.rot = warp['rotation']
-        self.degree = warp['degree']
+        warp['xshift'] = 0
+        warp['yshift'] = 0
+        warp['rotation'] = 0
+        warp['degree'] = 1
+        if 'xshift' in warp:  self.hpos = warp['xshift']
+        if 'yshift' in warp: self.vpos = warp['yshift']
+        if 'rotation' in warp: self.rot = warp['rotation']
+        if 'degree' in warp: self.degree = warp['degree']
         self.wmarks = np.transpose((self.xi, self.yi)).tolist()
         self.bmarks = np.transpose((self.xo, self.yo)).tolist()
         if 'direction' in warp:
@@ -1022,10 +1026,14 @@ class UI(Frame):
         self.yi = np.array(warp['yi'])
         self.xo = np.array(warp['xo'])
         self.yo = np.array(warp['yo'])
-        self.hpos = warp['xshift']
-        self.vpos = warp['yshift']
-        self.rot = warp['rotation']
-        self.degree = warp['degree']
+        warp['xshift'] = 0
+        warp['yshift'] = 0
+        warp['rotation'] = 0
+        warp['degree'] = 1
+        if 'xshift' in warp:  self.hpos = warp['xshift']
+        if 'yshift' in warp: self.vpos = warp['yshift']
+        if 'rotation' in warp: self.rot = warp['rotation']
+        if 'degree' in warp: self.degree = warp['degree']
         self.wmarks = np.transpose((self.xi, self.yi)).tolist()
         self.bmarks = np.transpose((self.xo, self.yo)).tolist()
         if 'direction' in warp:

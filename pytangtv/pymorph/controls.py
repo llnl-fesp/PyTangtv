@@ -5,7 +5,7 @@ try:
    from tkinter import *
 except:
    from Tkinter import *
-from idlelib.tooltip import Hovertip
+from pytangtv.pymorph.hovertip_compat import Hovertip
 
 thisfile=os.path.realpath(pytangtv.__file__)
 thispath=os.path.dirname(thisfile)
