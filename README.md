@@ -10,3 +10,15 @@ PyAlign - program to do simple, rigid, image plane transformations of the loaded
 
 PyMorph - used to determine the foreground->background control points to do polynomial spatial warping of the foreground to match the background. Used to fix spherical aberations in an image.
 
+## Requirements
+
+Python 3.9+, with Tkinter available (bundled with most Python installs; on Linux install your distribution's `python3-tk` package).
+
+## Installation
+
+```
+pip install .
+```
+
+This installs the `pytangtv` package and its dependencies, and puts the `picker`, `pymask`, `pyalign`, and `pymorph` scripts on your `PATH`.
+
