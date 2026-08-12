@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyTangtv"
+version = "1.0.31"
+description = "LLNL DIII-D diagnostic image tools"
+readme = "README.md"
+license = { text = "LLNL" }
+maintainers = [
+    { name = "Bill Meyer", email = "meyer8@llnl.gov" },
+]
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "requests",
+    "pyyaml",
+    "numpy",
+    "scipy",
+    "Pillow",
+    "packaging",
+]
+
+[tool.setuptools]
+packages = [
+    "pytangtv",
+    "pytangtv.pymorph",
+    "pytangtv.pyalign",
+    "pytangtv.pymask",
+    "pytangtv.picker",
+]
+script-files = [
+    "pytangtv/pyalign/pyalign",
+    "pytangtv/pymorph/pymorph",
+    "pytangtv/picker/picker",
+    "pytangtv/pymask/pymask",
+]
+
+[tool.setuptools.package-data]
+pytangtv = ["bitmaps/*.xbm", "bitmaps/*.png"]
